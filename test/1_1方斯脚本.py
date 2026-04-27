@@ -32,7 +32,6 @@ import pyautogui as pa
 import cv2
 import numpy as np
 from PIL import ImageGrab
-import keyboard  # 用于键盘输入
 
 x, y = pa.size()
 print(x, y)

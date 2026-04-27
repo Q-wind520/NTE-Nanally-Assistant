@@ -13,7 +13,7 @@ def region_compare(region_num: int, # 区域编号(0:全屏, 1-6:屏幕区域)
 
     # 验证图片文件是否存在
     if not os.path.exists(image_path):
-        print(f"错误: 图片文件不存在{image_path}")
+        print(f"错误: 图片文件不存在 {image_path}")
         return False
 
     # 获取屏幕尺寸
@@ -143,8 +143,8 @@ def capture_region(region_num: int, save_path: Optional[str] = None) -> Optional
 
 # test
 print("\n"+"="*30)
-print()
-result = region_compare(0, 'D:\project\\NTE NA\\test\屏幕截图 2026-04-27 123405.png')
+
+result = region_compare(0, '1.png')
 
 if result:
     x, y = result
