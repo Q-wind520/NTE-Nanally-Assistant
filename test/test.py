@@ -2,7 +2,7 @@ import pyautogui
 import pydirectinput
 import psutil
 import time
-import win32gui
+# import win32gui
 
 # 转换基准坐标为实际坐标
 def change_position(position, scale_x, scale_y):
@@ -41,20 +41,22 @@ def script_DianZhangTeGong_1_1(times, actual_position):
         time.sleep(1)
         pydirectinput.click(*actual_position['_1_1'])
         time.sleep(1)
+        pydirectinput.click(*actual_position['_1_4'])
+        time.sleep(0.5)
         pydirectinput.click(*actual_position['_2_2'])
         time.sleep(0.5)
         pydirectinput.click(*actual_position['_3_2'])
         print("Info:完成第一个订单")
         time.sleep(0.5)
         pydirectinput.click(*actual_position['_2_1'])
-        # time=3.5s
+        # time=4s
         print("Info:等待第二个订单")
         time.sleep(3.5)
         pydirectinput.click(*actual_position['_3_3'])
         print("Info:完成第二个订单")
-        # time=8s
+        # time=7.5s
         print("Info:等待第三个订单")
-        time.sleep(9)
+        time.sleep(7.5)
         pydirectinput.click(*actual_position['_3_1'])
         print("Info:完成第三个订单")
         time.sleep(0.5)
@@ -70,7 +72,7 @@ def main():
     position_DianZhangTeGong_1_1 = {
         # _行_列: x, y
         'action': (1712, 1007),
-        'level': (@ 未完成),
+        'level': (164, 394),
         '_1_1': (125, 994),
         '_1_2': (742, 988),
         '_1_3': (986, 987),
@@ -102,7 +104,7 @@ def main():
     # 给用户5秒钟时间切换到游戏界面
     print("Info:请在5秒钟内切换到游戏界面，脚本将自动执行\n"*3,end='')
     time.sleep(5)
-    win32gui.SetForegroundWindow(win32gui.FindWindow(None, 'HTGame'@还未知晓))
+    # win32gui.SetForegroundWindow(win32gui.FindWindow(None, 'HTGame'@还未知晓))
 
     # 执行脚本
     script_DianZhangTeGong_1_1(10, actual_position)
