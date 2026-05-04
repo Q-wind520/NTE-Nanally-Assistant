@@ -1,4 +1,4 @@
-# NTE Nanally Assistant(异环_NA)
+# <center>NTE Nanally Assistant(异环_NA)</center>
 
 ## 简述
 NTE Nanally Assistant（异环娜娜莉助手）是一个基于计算机视觉、模拟键鼠操作的脚本项目，可以帮助你在异环中自动完成一些枯燥的任务。
