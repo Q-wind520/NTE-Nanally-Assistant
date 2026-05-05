@@ -2,14 +2,8 @@ import pyautogui
 import pydirectinput
 import psutil
 import time
-# import win32gui
+# import win32gui(尝试自动激活游戏窗口，但可能存在兼容性问题，暂时注释掉)
 
-# 转换基准坐标为实际坐标
-def change_position(position, scale_x, scale_y):
-    new_position = {}
-    for key, (x, y) in position.items():
-        new_position[key] = (int(x * scale_x), int(y * scale_y))
-    return new_position
 
 # 检测游戏是否启动
 def is_HTGame_running():
@@ -68,7 +62,6 @@ def script_DianZhangTeGong_1_1(times, actual_position):
 def main():
 
     # 引入脚本位置坐标
-    # 1080P分辨率下的店长特供_1-1坐标
     position_DianZhangTeGong_1_1 = {
         # _行_列: x, y
         'action': (1712, 1007),
@@ -90,24 +83,16 @@ def main():
     size_x, size_y = pyautogui.size()
     print(f"Info:检测屏幕分辨率为{size_x}×{size_y}")
 
-    # 定义基准分辨率（假设脚本基于1920x1080设计）
-    base_x, base_y = 1920, 1080
-    scale_x = size_x / base_x
-    scale_y = size_y / base_y
-
     # 检测异环是否启动
     is_HTGame_running()
 
-    # 转换坐标
-    actual_position = change_position(position_DianZhangTeGong_1_1, scale_x, scale_y)
-
     # 给用户5秒钟时间切换到游戏界面
     print("Info:请在5秒钟内切换到游戏界面，脚本将自动执行\n"*3,end='')
+    # win32gui.SetForegroundWindow(win32gui.FindWindow(None, 'HTGame'))
     time.sleep(5)
-    # win32gui.SetForegroundWindow(win32gui.FindWindow(None, 'HTGame'@还未知晓))
 
     # 执行脚本
-    script_DianZhangTeGong_1_1(10, actual_position)
+    script_DianZhangTeGong_1_1(10, position_DianZhangTeGong_1_1)
 
 if __name__ == '__main__':
     main()
