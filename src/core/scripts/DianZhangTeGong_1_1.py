@@ -1,68 +1,56 @@
 import pydirectinput
 import time
+from core.packages.tools import get_button_center_position
 
 # 脚本_店长特供_1-1(int执行次数)
 def script_DianZhangTeGong_1_1(times):
-    # 引入脚本位置坐标
-    actual_position = {
-        # _行_列: x, y
-        'action': (1712, 1007),
-        'level': (164, 394),
-        '_1_1': (125, 994),
-        '_1_2': (742, 988),
-        '_1_3': (986, 987),
-        '_1_4': (1268, 1022),
-        '_2_1': (145, 803),
-        '_2_2': (653, 798),
-        '_3_1': (242, 649),
-        '_3_2': (415, 629),
-        '_3_3': (1055, 652),
-        'exit': (44, 57),
-        'receive': (1169, 835)
-    }
+    """times:执行次数"""
 
     # 执行脚本
     for i in range(times):
-        print(f"Script:正在执行脚本:店长特供_1-1,第{i+1}次")
+        print(f"\tScript:正在执行脚本:店长特供_1-1,第{i+1}次")
         time.sleep(2)
         pydirectinput.press('f')
+        print("\tScript:已键入F")
         time.sleep(2)
-        print("Script:已键入F")
-        pydirectinput.click(*actual_position['level'])
+        # 关卡1-1 && 开始营业 && 等待
+        pydirectinput.click(*(get_button_center_position('./assets/DZTG_1-1/level.png')))
         time.sleep(0.5)
-        pydirectinput.click(*actual_position['action'])
-        print("Script:等待倒计时结束")
+        pydirectinput.click(*(get_button_center_position('./assets/DZTG_1-1/start.png')))
+        print("\tScript:已点击营业按钮")
+        print("\tScript:等待倒计时结束")
         time.sleep(6)
-        print("Script:已点击营业按钮")
-        print('Script:执行准备工作')
-        pydirectinput.click(*actual_position['_1_2'])
+        # 开始做饭
+        print('\tScript:执行准备工作')
+        pydirectinput.click(*get_button_center_position('./assets/DZTG_1-1/_1_2.png'))
         time.sleep(0.5)
-        pydirectinput.click(*actual_position['_1_3'])
+        pydirectinput.click(*(get_button_center_position('./assets/DZTG_1-1/_1_3.png')))
         time.sleep(1)
-        pydirectinput.click(*actual_position['_1_1'])
+        pydirectinput.click(*(get_button_center_position('./assets/DZTG_1-1/_1_1.png')))
         time.sleep(1)
-        pydirectinput.click(*actual_position['_1_4'])
+        print("\tScript:制作第一个订单")
+        pydirectinput.click(*(get_button_center_position('./assets/DZTG_1-1/_2_2.png')))
         time.sleep(0.5)
-        pydirectinput.click(*actual_position['_2_2'])
+        pydirectinput.click(*(get_button_center_position('./assets/DZTG_1-1/_3_2.png')))
         time.sleep(0.5)
-        pydirectinput.click(*actual_position['_3_2'])
-        print("Script:完成第一个订单")
-        time.sleep(0.5)
-        pydirectinput.click(*actual_position['_2_1'])
-        # time=4s
-        print("Script:等待第二个订单")
+        print("\tScript:完成第一个订单")
+        print("\tScript:制作第二个订单")
+        pydirectinput.click(*(get_button_center_position('./assets/DZTG_1-1/_1_4.png')))
         time.sleep(3.5)
-        pydirectinput.click(*actual_position['_3_3'])
-        print("Script:完成第二个订单")
-        # time=7.5s
-        print("Script:等待第三个订单")
-        time.sleep(7.5)
-        pydirectinput.click(*actual_position['_3_1'])
-        print("Script:完成第三个订单")
+        # time=7s
+        pydirectinput.click(*(get_button_center_position('./assets/DZTG_1-1/_3_3.png')))
+        print("\tScript:完成第二个订单")
+        print("\tScript:制作第三个订单")
+        pydirectinput.click(*(get_button_center_position('./assets/DZTG_1-1/_2_1.png')))
+        time.sleep(8.5)
+        # time=16s
+        pydirectinput.click(*(get_button_center_position('./assets/DZTG_1-1/_3_1.png')))
+        print("\tScript:完成第三个订单")
+        print("\tScript:退出并领取奖励")
         time.sleep(0.5)
-        pydirectinput.click(*actual_position['exit'])
-        time.sleep(0.5)
-        pydirectinput.click(*actual_position['receive'])
+        pydirectinput.click(*(get_button_center_position('./assets/DZTG_1-1/exit.png')))
+        time.sleep(1.5)
+        pydirectinput.click(*(get_button_center_position('./assets/DZTG_1-1/reward.png')))
 
 
 
