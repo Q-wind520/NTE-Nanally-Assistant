@@ -43,3 +43,8 @@ def get_button_center_position(image_path):
             time.sleep(0.2)
     print(f"Error:未找到按钮图片: {image_path}，请确保分辨率为1920x1080")
     exit(1)
+
+# TODO:兼容分辨率，通过图像缩放
+
+
+

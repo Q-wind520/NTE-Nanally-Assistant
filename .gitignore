@@ -4,3 +4,5 @@
 *.spec
 /.vscode
 /.venv
+/.idea
+开发日志.prg

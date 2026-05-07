@@ -1,1 +1,2 @@
-import DianZhangTeGong_1_1
+import core.scripts.DianZhangTeGong.DianZhangTeGong_1_1 as DianZhangTeGong_1_1
+import core.scripts.DianZhangTeGong.DianZhangTeGong_TuiGuanQia as DianZhangTeGong_TuiGuanQia

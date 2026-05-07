@@ -1,6 +1,6 @@
 import pyautogui
 import time
-import scripts.DianZhangTeGong_1_1
+import core.scripts.DianZhangTeGong.DianZhangTeGong_1_1
 
 
 
@@ -25,7 +25,7 @@ def main():
             "Notice:请在5秒内切换到游戏界面\n"
             "Notice:请在5秒内切换到游戏界面")
         time.sleep(5)
-        scripts.DianZhangTeGong_1_1.script_DianZhangTeGong_1_1(int(times))
+        core.scripts.DianZhangTeGong.DianZhangTeGong_1_1.script_DianZhangTeGong_1_1(int(times))
 
 
 
