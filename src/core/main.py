@@ -1,22 +1,18 @@
 import pyautogui
 import time
-import core.scripts.DianZhangTeGong.DianZhangTeGong_1_1
+from core.scripts.DianZhangTeGong._1_1 import *
+from core.packages.tools import *
 
 
 
 def main():
-    # 获取屏幕信息
-    size_x, size_y = pyautogui.size()
-    print(f"Info:检测屏幕分辨率为{size_x}×{size_y}")
-    if size_x != 1920 or size_y != 1080:
-        print("Warn:当前分辨率非1920x1080，坐标可能不准确，未来将继续适配更多分辨率")
+    # 获取屏幕信息并计算缩放比例
+    scale_factor = ScreenInfo()
 
     # 检测异环是否启动
-    from core.packages.tools import is_HTGame_running
     is_HTGame_running()
 
     # 选择菜单
-    from core.packages.tools import menu
     menu_choice = menu()
     if menu_choice == 'DianZhangTeGong_1-1':
         times = input("请输入要执行的次数: ")
@@ -25,7 +21,7 @@ def main():
             "Notice:请在5秒内切换到游戏界面\n"
             "Notice:请在5秒内切换到游戏界面")
         time.sleep(5)
-        core.scripts.DianZhangTeGong.DianZhangTeGong_1_1.script_DianZhangTeGong_1_1(int(times))
+        script_DianZhangTeGong_1_1(int(times))
 
 
 

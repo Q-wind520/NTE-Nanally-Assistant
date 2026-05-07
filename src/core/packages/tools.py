@@ -27,24 +27,18 @@ def menu():
         print(f"Error:发生异常: {e}")
         exit(1)
 
-# -----图像识别坐标-----
-def get_button_center_position(image_path):
-    """
-    传入按钮图片路径
-    3次全屏搜索该图片
-    返回按钮中心坐标
-    """
-    from pyautogui import locateOnScreen, center
-    for i in range(3):
-        template = locateOnScreen(image_path, confidence=0.8)
-        if template is not None: return center(template)
-        else:
-            print(f"Warn:未找到按钮图片: {image_path}，正在重试...({i+1}/3)")
-            time.sleep(0.2)
-    print(f"Error:未找到按钮图片: {image_path}，请确保分辨率为1920x1080")
-    exit(1)
-
-# TODO:兼容分辨率，通过图像缩放
-
-
-
+# -----获取游戏窗口信息并计算缩放比例-----
+def ScreenInfo():
+    """判断分辨率是否适配，返回缩放比例"""
+    from pyautogui import size
+    x, y = size()
+    print(f"Info:检测屏幕分辨率为{x}×{y}")
+    if x == 1920 and y == 1080:
+        scale_factor = 1
+    elif (x != 1920 or y != 1080) and (x // y == 16 // 9):
+        print("Warn:当前分辨率非1920x1080，坐标可能不准确")
+        scale_factor = x / 1920 if x < 1920 else 1920 / x
+    else:
+        print("Error:当前分辨率非16:9，坐标不适配,请调整分辨率为16:9的常见分辨率（如1920x1080、1600x900、1366x768等）")
+        exit(1)
+    return scale_factor
