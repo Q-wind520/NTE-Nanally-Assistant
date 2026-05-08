@@ -7,7 +7,6 @@ def is_HTGame_running():
     for proc in psutil.process_iter(['name']):
         if proc.info['name'] == 'HTGame.exe':
             print("Info:已检测到异环进程，继续执行脚本")
-            return True
     print("Error:未检测到异环进程，请确保游戏已启动")
     exit(1)
 
@@ -42,3 +41,4 @@ def ScreenInfo():
         print("Error:当前分辨率非16:9，坐标不适配,请调整分辨率为16:9的常见分辨率（如1920x1080、1600x900、1366x768等）")
         exit(1)
     return scale_factor
+
