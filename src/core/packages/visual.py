@@ -24,3 +24,27 @@ def template_center(image_path, region=None):
         else:
             print(f"Warn:未找到按钮图片: {image_path}，正在重试...")
             time.sleep(0.2)
+
+
+# -----jiepingquyusuofang-----
+def scale_region(temp_region, scale):
+    """
+    参数:
+    temp_region: dict
+    scale: float
+    返回:
+    new_region: dict
+    """
+    new_region = {}
+
+    for key, rect in temp_region.items():
+        if len(rect) != 4:
+            raise ValueError(f"{key}: is uncomplete")
+        x, y, width, height = rect
+        scaled_x = int(round(x * scale))
+        scaled_y = int(round(y * scale))
+        scaled_width = int(round(width * scale))
+        scaled_height = int(round(height * scale))
+        new_region[key] = (scaled_x, scaled_y, scaled_width, scaled_height)
+    return new_region
+
