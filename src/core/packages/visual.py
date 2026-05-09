@@ -8,7 +8,7 @@ def template_center(image_path, region=None, scale_factor=1):
     返回按钮中心坐标
     """
 
-    form PIL import Image
+    from PIL import Image
     from pyautogui import locateOnScreen, center
 
 

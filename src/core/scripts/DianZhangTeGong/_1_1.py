@@ -11,7 +11,7 @@ def script_DianZhangTeGong_1_1(times):
 	'level': (0, 0, 960, 540),
 	'start': (1440, 810, 480, 27),
 	'table':(0, 540, 1920, 540),
-        'all': (0, 0, 1920, 1080),
+    'all': (0, 0, 1920, 1080)
     }
     temp_region = scale_region(temp_region, scale_factor)
     # 执行脚本
