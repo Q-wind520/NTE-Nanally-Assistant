@@ -9,9 +9,11 @@ def is_HTGame_running():
             if proc.info['name'] == 'HTGame.exe':
                 print("Info:已检测到异环进程，继续执行脚本")
                 break
-            else:
-                print("Warn:未检测到异环进程，请确保游戏已启动")
-                time.sleep(2)
+        else:
+            print("Warn:未检测到异环进程，请确保游戏已启动")
+            time.sleep(2)
+            continue
+        break
 
 # -----菜单选择-----
 def menu():
