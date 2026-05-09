@@ -13,15 +13,14 @@ def main():
     is_HTGame_running()
 
     # 选择菜单
-    menu_choice = menu()
+    menu_choice, times = menu()
     if menu_choice == 'DianZhangTeGong_1-1':
-        times = input("请输入要执行的次数: ")
         print("Info:准备执行剧本:店长特供_1-1\n"
             "Notice:请在5秒内切换到游戏界面\n"
             "Notice:请在5秒内切换到游戏界面\n"
             "Notice:请在5秒内切换到游戏界面")
         time.sleep(5)
-        script_DianZhangTeGong_1_1(int(times))
+        script_DianZhangTeGong_1_1(times)
 
 
 
