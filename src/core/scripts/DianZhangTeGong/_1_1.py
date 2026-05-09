@@ -4,7 +4,7 @@ from core.packages.visual import template_center, scale_region
 
 
 # 脚本_店长特供_1-1(int执行次数)
-def script_DianZhangTeGong_1_1(times):
+def script_DianZhangTeGong_1_1(times, scale_factor):
     """times:执行次数"""
     base_path = './assets/DZTG_1-1/'
     temp_region = {

@@ -7,7 +7,7 @@ from core.packages.tools import *
 
 def main():
     # 获取屏幕信息并计算缩放比例
-    scale_factor = ScreenInfo()
+    scale_factor = get_scale()
 
     # 检测异环是否启动
     is_HTGame_running()
@@ -23,7 +23,7 @@ def main():
                 "Notice:请在5秒内切换到游戏界面\n"
                 "Notice:请在5秒内切换到游戏界面")
             time.sleep(5)
-            script_DianZhangTeGong_1_1(times)
+            script_DianZhangTeGong_1_1(times, scale_factor)
         else:
             pass
     # exit
@@ -31,7 +31,7 @@ def main():
     print(" NTE Nanally Assistant ")
     print("=======================")
     print("        See You        ")
-    Print("=======================")
+    print("=======================")
 
     time.sleep(2)
     return 0

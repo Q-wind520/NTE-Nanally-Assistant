@@ -1,3 +1,11 @@
+Metadata-Version: 2.4
+Name: NTE_Nanally_Assistant
+Version: 0.1.0
+Summary: NTE Nanally Assistant 为你轻松处理异环中的重复性劳动，拿到真正的劳动所得！
+Author-email: Q-wind520 <mg_fire1030@163.com>
+Requires-Python: >=3.13.13
+Description-Content-Type: text/markdown
+
 # <div ><center />NTE Nanally Assistant(异环_NA)</div>
 
 <div ><center /><img src=./docs/img/icon.png alt='icon' title='Nanally Assistant' width='30%'></div>

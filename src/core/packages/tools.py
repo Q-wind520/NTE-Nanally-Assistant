@@ -8,23 +8,26 @@ def is_HTGame_running():
         for proc in process_iter(['name']):
             if proc.info['name'] == 'HTGame.exe':
                 print("Info:已检测到异环进程，继续执行脚本")
-        print("Warn:未检测到异环进程，请确保游戏已启动")
+                break
+            else:
+                print("Warn:未检测到异环进程，请确保游戏已启动")
+                time.sleep(2)
 
 # -----菜单选择-----
 def menu():
     scripts = {
-            _1: "1.xxxx_1-1" 
-            _2: "2.xxxx_tuiguanqia" 
-            _0: "0.exit"
+            "_1": "1.xxxx_1-1" ,
+            "_2": "2.xxxx_tuiguanqia" ,
+            "_0": "0.exit"
             }
     while True:
         try:
             print("请选择要执行的脚本:")
             print(scripts)
             choice = input("请输入数字选择脚本: ")     
-            if choice == _0:
+            if choice == "_0":
                 return 'exit', None
-            elif choice == _1:
+            elif choice == "_1":
                 times = input("please input times:")
                 return 'DianZhangTeGong_1-1', int(times)
             else:
