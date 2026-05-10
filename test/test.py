@@ -1,29 +1,53 @@
+def test():
+        
 
-# 寻找模板在屏幕上的位置，返回中心坐标
-"""
-def find_template_on_screen(template_path, confidence=0.8):
-    # 截取屏幕
-    screen = pyautogui.screenshot()
-    screen_np = np.array(screen)
-    screen_gray = cv2.cvtColor(screen_np, cv2.COLOR_RGB2GRAY)
-    
-    # 读取模板
-    template = cv2.imread(template_path, 0)
-    w, h = template.shape[::-1]
-    
-    # 模板匹配
-    res = cv2.matchTemplate(screen_gray, template, cv2.TM_CCOEFF_NORMED)
-    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    
-    if max_val >= confidence:
-        # 返回中心点坐标
-        center_x = max_loc[0] + w // 2
-        center_y = max_loc[1] + h // 2
-        return center_x, center_y, max_val
-    return None
-"""
 
-import pyautogui
-from ..src.core.packages.tools import get_button_center_position
+    def get_hwnd_by_process(name="HTGame.exe"):
+        """
+        通过进程名获取窗口句柄
+        返回第一个匹配的窗口句柄，如果没有找到则返回None
+        """
+        import win32gui # type: ignore
+        import win32process # type: ignore
+        from psutil import process_iter
+        for proc in process_iter(['pid']):
+            if proc.name() == name:
+                pid = proc.pid
+                break
+        else:
+            return None
 
-print(get_button_center_position('../assets/DZTG_1-1/level.png'))
+        result = []
+
+        def callback(hwnd, _):
+            if win32gui.IsWindowVisible(hwnd):
+                _, window_pid = win32process.GetWindowThreadProcessId(hwnd)
+                if window_pid == pid:
+                    result.append(hwnd)
+
+        win32gui.EnumWindows(callback, None)
+        return result[0] if result else None
+
+
+    def top_window():
+        from win32gui import SetForegroundWindow # type: ignore
+        hwnd = get_hwnd_by_process()
+        if hwnd:
+            SetForegroundWindow(hwnd)
+    top_window()
+    hwnd = get_hwnd_by_process()
+    if hwnd:
+        print(f"Found window handle: {hwnd}")
+
+
+    return 0
+
+
+
+
+
+
+
+
+if __name__ == '__main__':
+    test()
