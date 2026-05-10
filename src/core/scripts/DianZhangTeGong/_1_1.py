@@ -9,8 +9,9 @@ def script_DianZhangTeGong_1_1(times, scale_factor):
     base_path = './assets/DZTG_1-1/'
     temp_region = {
 	'level': (0, 0, 960, 540),
-	'start': (1440, 810, 480, 27),
-	'table':(0, 540, 1920, 540),
+	'start': (1440, 810, 1919, 1079),
+	'table':(0, 540, 1920, 1080),
+    'exit': (0, 0, 100, 100),
     'all': (0, 0, 1920, 1080)
     }
     temp_region = scale_region(temp_region, scale_factor)
@@ -22,8 +23,9 @@ def script_DianZhangTeGong_1_1(times, scale_factor):
         print("\tScript:已键入F")
         time.sleep(2)
         # 关卡1-1 && 开始营业 && 等待
-        pdi.click(*template_center(f'{base_path}level.png', region=temp_region['level']))
-        time.sleep(0.5)
+        if i == 0:
+            pdi.click(*template_center(f'{base_path}level.png', region=temp_region['level']))
+            time.sleep(0.5)
         pdi.click(*template_center(f'{base_path}start.png', region=temp_region['start']))
         print("\tScript:已点击营业按钮")
         print("\tScript:等待倒计时结束")
