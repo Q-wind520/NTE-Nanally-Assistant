@@ -1,48 +1,44 @@
 import time
+from pyautogui import locateOnScreen, center
+from pydirectinput import click as pclick
 
 
-# -----图像识别坐标-----
-def template_center(image_path, region=None, scale_factor=1):
+def click(image_path, region=None, timeout=10, confidence=0.8):
     """
-    image_path: 传入模板路径
-    返回按钮中心坐标
+    在屏幕上查找模板图片并点击其中心位置
+    image_path: 模板图片路径
+    region: 搜索区域 (left, top, right, bottom)，默认为全屏
+    timeout: 超时时间(秒)，默认10秒
+    confidence: 匹配置信度，默认0.8
+    找到后点击并返回，未找到则继续查找直到超时
     """
-
-    from PIL import Image
-    from pyautogui import locateOnScreen, center
-
-    img = Image.open(image_path)
-    new_size = (int(img.width * scale_factor), int(img.height * scale_factor))
-    img = img.resize(new_size)
-
+    start_time = time.time()
     while True:
-        temp = locateOnScreen(image_path, confidence=0.8, region=region)
+        # 检查是否超时
+        if timeout > 0 and time.time() - start_time > timeout:
+            print(f"Warn: 查找超时({timeout}s)，未找到模板图片: {image_path}")
+            return False
         
+        # 查找模板图片
+        temp = locateOnScreen(image_path, confidence=confidence, region=region)
         if temp is not None:
-            return center(temp)
-        else:
-            print(f"Warn:未找到按钮图片: {image_path}，正在重试...")
-            time.sleep(0.2)
+            # 计算中心坐标
+            center_x, center_y = center(temp)
+            # 点击中心位置
+            pclick(center_x, center_y)
+            print(f"Info: 已点击模板图片: {image_path}，位置: ({center_x}, {center_y})")
+            return True
+        # 未找到，短暂等待后继续查找
+        time.sleep(0.1)
 
 
-# -----截屏区域缩放-----
-def scale_region(temp_region, scale):
+def is_image_exist(image_path, region=None, confidence=0.8):
     """
-    传入: temp_region=1080P区域, scale=缩放比; 
-    返回: new_region=当前分辨率的区域
+    检查模板图片是否存在
+    返回True或False
     """
-    new_region = {}
-
-    for key, rect in temp_region.items():
-        if len(rect) != 4:
-            raise ValueError(f"{key}: is uncomplete")
-        x, y, width, height = rect
-        new_x = int(round(x * scale))
-        new_y = int(round(y * scale))
-        new_width = int(round(width * scale))
-        new_height = int(round(height * scale))
-        new_region[key] = (new_x, new_y, new_width, new_height)
-    return new_region
-
+    if locateOnScreen(image_path, confidence=confidence, region=region):
+        return True
+    return False
 
 

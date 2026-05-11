@@ -17,41 +17,30 @@ def is_HTGame_running():
 
 # -----菜单选择-----
 def menu():
+    from core.scripts.DianZhangTeGong._1_1 import script_DianZhangTeGong_1_1
     scripts = {
-            "_1": "1.xxxx_1-1" ,
-            "_2": "2.xxxx_tuiguanqia" ,
-            "_0": "0.exit"
+            "1": "1.店长特供_1-1" ,
+            "2": "2.店长特供_退关卡" ,
+            "0": "0.退出"
             }
     while True:
         try:
-            print("请选择要执行的脚本:")
-            print(scripts)
+            print("脚本菜单:", scripts)
             choice = input("请输入数字选择脚本: ")     
-            if choice == "_0":
-                return 'exit', None
-            elif choice == "_1":
-                times = input("please input times:")
-                return 'DianZhangTeGong_1-1', int(times)
+            if choice == "0":
+                exitNA()
+            elif choice == "1": 
+                times = int(input("请输入执行次数:"))
+                time.sleep(1)
+                active_window()
+                script_DianZhangTeGong_1_1(times)
             else:
                 print("Error:无效的选择，请输入有效的数字")
+                continue
 
         except Exception as e:
             print(f"Error:发生异常: {e}")
-
-# -----获取游戏窗口信息并计算缩放比例-----
-def get_scale():
-    """判断分辨率是否适配，返回缩放比例"""
-    from pyautogui import size
-    x, y = size()
-    if x == 1920 and y == 1080:
-        scale_factor = 1
-    elif (x != 1920 or y != 1080) and (x // y == 16 // 9):
-        print("Warn:当前分辨率非1920x1080，坐标可能不准确")
-        scale_factor = x / 1920
-    else:
-        print("Error:当前分辨率非16:9，坐标不适配,请调整分辨率为16:9")
-        exit(1)
-    return scale_factor
+            continue
 
 # -----通过进程名获取窗口句柄-----
 def get_hwnd_by_process(name="HTGame.exe"):
@@ -81,7 +70,26 @@ def get_hwnd_by_process(name="HTGame.exe"):
 
 # -----激活窗口-----
 def active_window():
-    from win32gui import SetForegroundWindow # type: ignore
+    import win32gui # type: ignore
+    from win32con import SW_SHOWNORMAL # type: ignore
+    
     hwnd = get_hwnd_by_process()
     if hwnd:
-        SetForegroundWindow(hwnd)
+        try:
+            win32gui.ShowWindow(hwnd, SW_SHOWNORMAL)
+            win32gui.SetForegroundWindow(hwnd)
+            print("Info: 已成功激活游戏窗口")
+        except Exception as e:
+            print(f"Warn: 激活窗口失败: {e}")
+
+# -----退出娜娜莉助手-----
+def exitNA():
+    print("="*75)
+    print("|" + " "*24 + "  NTE Nanally Assistant  " + " "*24 + "|")
+    print("="*75)
+    print("|" + " "*20 + "version: 0.1.0-beta by Q-wind520 " + " "*20 + "|")
+    print("|" + " "*27 + "See You Next Time! " + " "*27 + "|")
+    print("="*75)
+    time.sleep(1)
+    return 0
+
