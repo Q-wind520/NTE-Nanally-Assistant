@@ -4,13 +4,17 @@ import time
 # -----检测游戏是否运行-----
 def is_HTGame_running():
     from psutil import process_iter
+    starttime = time.time()
     while True:
         for proc in process_iter(['name']):
             if proc.info['name'] == 'HTGame.exe':
-                print("Info:已检测到异环进程，继续执行脚本")
+                print("Info: 已检测到异环进程，继续")
                 break
-        else:
-            print("Warn:未检测到异环进程，请确保游戏已启动")
+        if time.time() - starttime > 300:
+            print("FATAL: 长时间未检测到游戏进程，异常退出")
+            exit(-1)
+        if int(time.time() - starttime) % 10 == 0:
+            print("Warn: 未检测到异环进程，等待游戏启动")
             time.sleep(2)
             continue
         break
@@ -91,12 +95,11 @@ def exitNA():
     print("|" + " "*27 + "See You Next Time! " + " "*27 + "|")
     print("="*75)
     time.sleep(1)
-    return 0
+    exit(0)
 
-# -----getwindowinfomation------
+# -----获取窗口信息-----
 def get_window(hwnd):
     """
-    根据窗口句柄获取窗口信息
     hwnd: 窗口句柄
     返回: 窗口信息字典，包含位置和尺寸
     {
@@ -105,16 +108,27 @@ def get_window(hwnd):
         'right': 窗口右下角X坐标,
         'bottom': 窗口右下角Y坐标,
         'width': 窗口宽度,
-        'height': 窗口高度,
+        'height': 窗口高度
     }
     """
-    import win32gui  # type: ignore
+    import win32gui
+    import ctypes
     
     if not hwnd:
         return None
     
+    from pyautogui import size
+    screen_width, screen_height = size()
+
+    
     # 获取窗口矩形区域
     left, top, right, bottom = win32gui.GetWindowRect(hwnd)
+    
+    # 非全屏时减去窗口边框
+    height = bottom - top
+    if height < screen_height:
+        left += 9; right -= 9; top += 37; bottom -= 10
+
     
     # 计算宽度和高度
     width = right - left
@@ -128,4 +142,39 @@ def get_window(hwnd):
         'width': width,
         'height': height
     }
+
+
+# -----直到1080窗口才继续-----
+def wait_1080():
+    # -----是1080吗-----
+    def is_1080():
+        window_info = get_window(get_hwnd())
+        if window_info is None:
+            print("Warn: 无法获取窗口信息")
+            return False
+        if window_info['height'] == 1080:
+            return True
+        return False
+    
+    starttime = time.time()
+    while True:
+        if not is_1080():
+            elapsed = time.time() - starttime
+            if elapsed < 5:
+                print("Error: 请将游戏窗口化为1920×1080分辨率，不能执行脚本")
+                print("Notice: 正在等柠窗口化...")
+                time.sleep(5)
+            elif elapsed < 300:
+                print(f"Notice: 等待窗口化中 ({int(elapsed)}s)")
+                time.sleep(2)
+            else:
+                print("FATAL: 长时间未检测到窗口化，异常退出")
+                exit(-1)
+        else:
+            print("Info: 检测到已窗口化为1080，继续")
+            break
+        
+
+
+
 
