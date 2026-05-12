@@ -43,7 +43,7 @@ def menu():
             continue
 
 # -----通过进程名获取窗口句柄-----
-def get_hwnd_by_process(name="HTGame.exe"):
+def get_hwnd(name="HTGame.exe"):
         """
         通过进程名获取窗口句柄
         返回第一个匹配的窗口句柄，如果没有找到则返回None
@@ -73,7 +73,7 @@ def active_window():
     import win32gui # type: ignore
     from win32con import SW_SHOWNORMAL # type: ignore
     
-    hwnd = get_hwnd_by_process()
+    hwnd = get_hwnd()
     if hwnd:
         try:
             win32gui.ShowWindow(hwnd, SW_SHOWNORMAL)
@@ -92,4 +92,11 @@ def exitNA():
     print("="*75)
     time.sleep(1)
     return 0
+
+
+def get_window():
+    from win32gui import EnumWindows # type: ignore
+    windows = []
+    EnumWindows(get_hwnd, windows)
+    return windows[0] if windows else None
 

@@ -1,6 +1,4 @@
-import time
-from core.packages.tools import is_HTGame_running
-from core.packages.tools import menu
+from core.packages.tools import is_HTGame_running, menu
 
 
 def main():

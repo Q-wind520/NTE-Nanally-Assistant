@@ -1,6 +1,7 @@
 import time
 from pyautogui import locateOnScreen, center
 from pydirectinput import click as pclick
+from core.packages.tools import get_window
 
 
 def click(image_path, region=None, timeout=10, confidence=0.8):
@@ -41,4 +42,41 @@ def is_image_exist(image_path, region=None, confidence=0.8):
         return True
     return False
 
+class VisionManager:
 
+    def __init__(self, window_rect):
+        self.left, self.top, self.right, self.bottom = window_rect
+        self.width = self.right - self.left
+        self.height = self.bottom - self.top
+
+    def capture(self):
+        from pyautogui import screenshot
+        return screenshot(
+            region=(self.left, self.top, self.width, self.height)
+        )
+    
+    def find_template(self, template_path, confidence=0.8):
+        from cv2 import imread, matchTemplate, TM_CCOEFF_NORMED, minMaxLoc
+        import numpy as np
+        # 读取截图和模板图片
+        screenshot = self.capture()
+        screenshot_np = np.array(screenshot)
+        template = imread(template_path)
+        # 模板匹配
+        result = matchTemplate(screenshot_np, template, TM_CCOEFF_NORMED)
+        min_val, max_val, min_loc, max_loc = minMaxLoc(result)
+        if max_val >= confidence:
+            return (max_loc[0] + self.left, max_loc[1] + self.top)  # 返回屏幕坐标
+        return None
+
+
+
+class ActionManager:
+    def __init__(self):
+        rect = get_window()
+        self.left, self.top, _, _ = rect
+
+    def click_position(self, r_x, r_y):
+        abs_x = self.left + r_x
+        abs_y = self.top + r_y
+        pclick(abs_x, abs_y)

@@ -1,6 +1,9 @@
 import pydirectinput as pdi
 import time
 from core.packages.visual import click
+import ctypes
+ctypes.windll.shcore.SetProcessDpiAwareness(1)
+
 
 def script_DianZhangTeGong_1_1(times):
     """times:执行次数"""
@@ -27,7 +30,7 @@ def script_DianZhangTeGong_1_1(times):
         click(f'{base_path}start.png', temp_region['start'])
         print("\tScript:已点击营业按钮")
         print("\tScript:等待倒计时结束")
-        time.sleep(6) # 必要的等待时长，不可删除
+        time.sleep(5.5) # 必要的等待时长，不可删除
 
         print('\tScript:执行准备工作')
         click(f'{base_path}_1_2.png', temp_region['table'])
