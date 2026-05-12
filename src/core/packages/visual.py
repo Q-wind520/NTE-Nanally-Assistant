@@ -45,7 +45,7 @@ def is_image_exist(image_path, region=None, confidence=0.8):
 class VisionManager:
 
     def __init__(self, window_rect):
-        self.left, self.top, self.right, self.bottom = window_rect
+        self.left, self.top, self.right, salf.bottom = window_rect
         self.width = self.right - self.left
         self.height = self.bottom - self.top
 
