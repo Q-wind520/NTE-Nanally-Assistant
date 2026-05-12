@@ -94,9 +94,46 @@ def exitNA():
     return 0
 
 
-def get_window():
-    from win32gui import EnumWindows # type: ignore
-    windows = []
-    EnumWindows(get_hwnd, windows)
-    return windows[0] if windows else None
+def get_window(hwnd):
+    """
+    根据窗口句柄获取窗口信息
+    hwnd: 窗口句柄
+    返回: 窗口信息字典，包含位置和尺寸
+    {
+        'left': 窗口左上角X坐标,
+        'top': 窗口左上角Y坐标,
+        'right': 窗口右下角X坐标,
+        'bottom': 窗口右下角Y坐标,
+        'width': 窗口宽度,
+        'height': 窗口高度,
+        'center_x': 窗口中心X坐标,
+        'center_y': 窗口中心Y坐标
+    }
+    """
+    import win32gui  # type: ignore
+    
+    if not hwnd:
+        return None
+    
+    # 获取窗口矩形区域
+    left, top, right, bottom = win32gui.GetWindowRect(hwnd)
+    
+    # 计算宽度和高度
+    width = right - left
+    height = bottom - top
+    
+    # 计算中心坐标
+    center_x = left + width // 2
+    center_y = top + height // 2
+    
+    return {
+        'left': left,
+        'top': top,
+        'right': right,
+        'bottom': bottom,
+        'width': width,
+        'height': height,
+        'center_x': center_x,
+        'center_y': center_y
+    }
 

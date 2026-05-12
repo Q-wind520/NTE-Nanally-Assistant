@@ -1,12 +1,27 @@
 def test():
         
-    from core.packages.tools import get_hwnd
-    from win32gui import EnumWindows
+
+    from core.packages.tools import get_hwnd, get_window
+
+    hwnd = get_hwnd()
+    print(f"窗口信息:{get_window(hwnd)}")
 
 
-    windows = []
-    EnumWindows(get_hwnd, windows)
-    return windows[0] if windows else None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     return 0
 
