@@ -1,32 +1,18 @@
 def test():
         
 
-    from core.packages.tools import get_hwnd, get_window
+    from core.packages.tools import wait_1080, get_hwnd, get_window, menu
 
-    hwnd = get_hwnd()
-    print(f"窗口信息:{get_window(hwnd)}")
+    # while True:
+    #     from pyautogui import position
+    #     print(position())
 
-    window_info = get_window(get_hwnd())
-    if window_info is None:
-        print("Warn: 无法获取窗口信息")
-        return -1
-    if window_info['height'] == 1080:
-        print("是1080窗口")
-    else:
-        print("不是1080窗口")
-
-
-
-
-
-
-
-
-
-
-
-
-
+    from pyautogui import center, moveTo
+    from core.packages.visual import msslocateOnScreen
+    region = msslocateOnScreen('./assets/DZTG_1-1/level.png')
+    if region == None: return -1
+    print(region)
+    moveTo(center(region))
 
 
     return 0

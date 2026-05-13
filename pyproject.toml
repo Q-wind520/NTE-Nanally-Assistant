@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "NTE_Nanally_Assistant"
-version = "0.1.0"
+version = "0.2.0"
 authors = [
     { name="Q-wind520", email="mg_fire1030@163.com" },
 ]
 description = "NTE Nanally Assistant 为你轻松处理异环中的重复性劳动，拿到真正的劳动所得！"
 readme = "README.md"
-requires-python = ">=3.13.13"
+requires-python = "==3.12.8"
 
 # 这里是你的依赖项，如果你有 requirements.txt，可以在下面这行引用它
 # dependencies = [
