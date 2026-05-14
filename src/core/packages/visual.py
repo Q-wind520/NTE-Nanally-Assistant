@@ -115,7 +115,7 @@ def click(image_path):
             pdi.click(center_x, center_y)
             print(f"Info: 已点击模板图片: {image_path}，位置: ({center_x}, {center_y})")
             return True
-        time.sleep(0.1)
+        time.sleep(0.5)
 
 
 
