@@ -77,7 +77,7 @@ def msslocateOnScreen(
     return (left, top, width, height)
 
 
-
+# -----点击模板图片-----
 def click(image_path):
     """
     在屏幕上查找模板图片并点击其中心位置

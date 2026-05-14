@@ -2,6 +2,7 @@ import pydirectinput as pdi
 import time
 from core.packages.visual import click
 import ctypes
+from core.packages.visual import msslocateOnScreen
 ctypes.windll.shcore.SetProcessDpiAwareness(1)
 
 
@@ -34,31 +35,31 @@ def script_DianZhangTeGong_1_1(times):
         print("Script:等待倒计时结束")
         time.sleep(5.5) # 必要的等待时长，不可删除
         # time=60
-        if msslocateOnScreen() != None:
+        if msslocateOnScreen(f'{base_path}') != None:
             print('Script:执行准备工作')
             click(f'{base_path}_1_2.png')
             click(f'{base_path}_1_3.png')
             click(f'{base_path}_1_1.png')
         # time=55
-        if msslocateOnScreen() != None:
+        if msslocateOnScreen(f'{base_path}') != None:
             print("Script:制作第一个订单")
             click(f'{base_path}_2_2.png')
             click(f'{base_path}_3_2.png')
             print("Script:完成第一个订单")
         # time=50
-        if msslocateOnScreen() != None:
+        if msslocateOnScreen(f'{base_path}') != None:
             print("Script:制作第二个订单")
             click(f'{base_path}_1_4.png')
             click(f'{base_path}_3_3.png')
             print("Script:完成第二个订单")
         # time=45
-        if msslocateOnScreen() != None:
+        if msslocateOnScreen(f'{base_path}') != None:
             print("Script:制作第三个订单")
             click(f'{base_path}_2_1.png')
             click(f'{base_path}_3_1.png')
             print("Script:完成第三个订单")
         # time=4
-        if msslocateOnScreen() != None:
+        if msslocateOnScreen(f'{base_path}') != None:
             print("Script:退出并领取奖励")
             click(f'{base_path}exit.png')
             time.sleep(1.2)

@@ -93,7 +93,7 @@ def exitNA():
     print("="*75)
     print("|" + " "*24 + "  NTE Nanally Assistant  " + " "*24 + "|")
     print("="*75)
-    print("|" + " "*20 + "version: 0.1.0-beta by Q-wind520 " + " "*20 + "|")
+    print("|" + " "*20 + "  version: 0.2.0  by Q-wind520   " + " "*20 + "|")
     print("|" + " "*27 + "See You Next Time! " + " "*27 + "|")
     print("="*75)
     time.sleep(1)
