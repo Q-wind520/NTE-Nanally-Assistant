@@ -113,13 +113,11 @@ def get_window(hwnd):
         'height': 窗口高度
     }
     """
-    from pyautogui import size
     
     # 获取窗口矩形区域
     left, top, right, bottom = win32gui.GetWindowRect(hwnd)
     
     # 非全屏时减去窗口边框
-    screen_width, screen_height = size()
     width = right - left
     height = bottom - top
     if (width // height != 16 // 9):

@@ -1,15 +1,14 @@
-import pydirectinput as pdi
 import time
+import pydirectinput as pdi
 from core.packages.visual import click
-import ctypes
 from core.packages.visual import msslocateOnScreen
-ctypes.windll.shcore.SetProcessDpiAwareness(1)
 
 
+# TODO - 填写模板图片在{base_path}后
 def script_DianZhangTeGong_1_1(times):
+    """times:执行次数"""
     from core.packages.tools import get_hwnd, get_window
     windowInfo = get_window(get_hwnd())
-    """times:执行次数"""
     base_path = './assets/DZTG_1-1/'
 
     for i in range(times):

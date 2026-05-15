@@ -6,13 +6,11 @@ import pydirectinput as pdi
 from core.packages.tools import wait_1080, get_window, get_hwnd
 
 
-# -----AI封装的msslocateOnScreen-----
+# -----mss查找模板图片-----
 def msslocateOnScreen(
     image_path,
     confidence=0.8,
-    screen_index=1,
-    region=None,
-    scale=1.0
+    screen_index=0
 ):
     """
     在指定屏幕中查找图片
@@ -24,7 +22,15 @@ def msslocateOnScreen(
     :param scale: 截图缩放比例，用于将高分辨率截图缩小后匹配低分辨率模板
     :return: (left, top, width, height) or None
     """
-
+    wait_1080()
+    # 窗口信息[region],[scale]
+    hwnd = get_hwnd()
+    windowInfo = get_window(hwnd)
+    if windowInfo is None:
+        print("Warn: 无法获取窗口信息")
+        return False
+    region = (windowInfo['left'], windowInfo['top'], windowInfo['width'], windowInfo['height'])
+    scale = windowInfo['scale']
     template = cv2.imread(image_path, cv2.IMREAD_COLOR)
     if template is None:
         raise FileNotFoundError(f"图片未找到: {image_path}")
@@ -32,7 +38,6 @@ def msslocateOnScreen(
     tpl_h, tpl_w = template.shape[:2]
 
     with mss.mss() as sct:
-        # monitors[0] 是虚拟全屏
         mon = sct.monitors[screen_index]
 
         if region:
@@ -57,7 +62,7 @@ def msslocateOnScreen(
 
     # 模板匹配
     res = cv2.matchTemplate(img_bgr, template, cv2.TM_CCOEFF_NORMED)
-    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    _, max_val, _, max_loc = cv2.minMaxLoc(res)
 
     if max_val < confidence:
         return None
@@ -85,28 +90,14 @@ def click(image_path):
     找到后点击并返回，未找到则继续查找直到超时
     """
     timeout, confidence = 10, 0.8
-    
-    # 窗口检测放循环外
-    if not wait_1080():
-        print("Warn: 窗口不是1080分辨率，无法执行点击")
-        return False
-    
-    hwnd = get_hwnd()
-    windowInfo = get_window(hwnd)
-    if windowInfo is None:
-        print("Warn: 无法获取窗口信息")
-        return False
-    
-    region = (windowInfo['left'], windowInfo['top'], windowInfo['width'], windowInfo['height'])
-    scale = windowInfo['scale']
-    starttime = time.time()
 
+    starttime = time.time()
     while True:
         if timeout > 0 and time.time() - starttime > timeout:
             print(f"Warn: 查找超时({timeout}s)，未找到模板图片: {image_path}")
             # TODO: 超时的备选脚本
             return False
-        
+
         # 查找模板图片
         temp = msslocateOnScreen(image_path, confidence=confidence, region=region, scale=scale)
         if temp is not None:
@@ -116,6 +107,7 @@ def click(image_path):
             print(f"Info: 已点击模板图片: {image_path}，位置: ({center_x}, {center_y})")
             return True
         time.sleep(0.5)
+
 
 
 
