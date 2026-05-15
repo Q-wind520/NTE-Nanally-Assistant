@@ -22,13 +22,13 @@ def msslocateOnScreen(
     :param scale: 截图缩放比例，用于将高分辨率截图缩小后匹配低分辨率模板
     :return: (left, top, width, height) or None
     """
-    wait_1080()
+    
     # 窗口信息[region],[scale]
     hwnd = get_hwnd()
     windowInfo = get_window(hwnd)
     if windowInfo is None:
         print("Warn: 无法获取窗口信息")
-        return False
+        return None
     region = (windowInfo['left'], windowInfo['top'], windowInfo['width'], windowInfo['height'])
     scale = windowInfo['scale']
     template = cv2.imread(image_path, cv2.IMREAD_COLOR)
@@ -99,7 +99,7 @@ def click(image_path):
             return False
 
         # 查找模板图片
-        temp = msslocateOnScreen(image_path, confidence=confidence, region=region, scale=scale)
+        temp = msslocateOnScreen(image_path, confidence=confidence)
         if temp is not None:
             left, top, width, height = temp
             center_x, center_y = left + width // 2, top + height // 2
