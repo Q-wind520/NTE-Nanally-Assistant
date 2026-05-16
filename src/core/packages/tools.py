@@ -51,29 +51,45 @@ def menu():
             continue
 
 # -----通过进程名获取窗口句柄-----
-def get_hwnd(name="HTGame.exe"):
-        """
-        通过进程名获取窗口句柄
-        返回第一个匹配的窗口句柄，如果没有找到则返回None
-        """
-        from psutil import process_iter
-        for proc in process_iter(['pid']):
-            if proc.name() == name:
-                pid = proc.pid
-                break
-        else:
-            print("FATAL: 无法得到窗口句柄")
-            exit(-1)
-
-        result = []
-        def callback(hwnd, _):
-            if win32gui.IsWindowVisible(hwnd):
-                _, window_pid = win32process.GetWindowThreadProcessId(hwnd)
-                if window_pid == pid:
-                    result.append(hwnd)
-
-        win32gui.EnumWindows(callback, None)
-        return result[0] if result else print("FATAL: 无法得到窗口句柄"); exit(-1)
+def get_hwnd(name: str = "HTGame.exe") -> int:
+    """
+    通过进程名获取窗口句柄
+    
+    Args:
+        name: 进程名，默认为 HTGame.exe
+        
+    Returns:
+        窗口句柄（整数）
+        
+    Raises:
+        RuntimeError: 找不到进程或窗口时抛出
+    """
+    from psutil import process_iter
+    
+    # 查找进程 PID
+    pid = None
+    for proc in process_iter(['pid', 'name']):
+        if proc.info['name'] == name:
+            pid = proc.info['pid']
+            break
+    
+    if pid is None:
+        raise RuntimeError(f"无法找到进程: {name}")
+    
+    # 枚举窗口查找属于该进程的可见窗口
+    result = []
+    def callback(hwnd, _):
+        if win32gui.IsWindowVisible(hwnd):
+            _, window_pid = win32process.GetWindowThreadProcessId(hwnd)
+            if window_pid == pid:
+                result.append(hwnd)
+    
+    win32gui.EnumWindows(callback, None)
+    
+    if not result:
+        raise RuntimeError(f"无法找到进程 {name} 的可见窗口")
+    
+    return result[0]
 
 # -----激活窗口-----
 def active_window():
@@ -99,34 +115,65 @@ def exitNA():
     time.sleep(1)
     exit(0)
 
+# 窗口边框常量（针对异环游戏窗口）
+WINDOW_BORDER_LEFT = 9
+WINDOW_BORDER_RIGHT = 9
+WINDOW_BORDER_TOP = 37
+WINDOW_BORDER_BOTTOM = 10
+TARGET_ASPECT_RATIO = 16 / 9  # 16:9 宽高比
+TARGET_HEIGHT = 1080
+
+
 # -----获取窗口信息-----
-def get_window(hwnd):
+def get_window(hwnd: int) -> dict:
     """
-    hwnd: 窗口句柄
-    返回: 窗口信息字典，包含位置和尺寸
-    {
-        'left': 窗口左上角X坐标,
-        'top': 窗口左上角Y坐标,
-        'right': 窗口右下角X坐标,
-        'bottom': 窗口右下角Y坐标,
-        'width': 窗口宽度,
-        'height': 窗口高度
-    }
-    """
+    获取窗口信息，自动处理窗口边框
     
-    # 获取窗口矩形区域
+    Args:
+        hwnd: 窗口句柄
+        
+    Returns:
+        窗口信息字典，包含位置和尺寸
+        
+    Raises:
+        ValueError: 窗口句柄无效或窗口尺寸异常
+    """
+    if not hwnd or not win32gui.IsWindow(hwnd):
+        raise ValueError(f"无效的窗口句柄: {hwnd}")
+    
+    # 获取窗口矩形区域（包含边框）
     left, top, right, bottom = win32gui.GetWindowRect(hwnd)
     
-    # 非全屏时减去窗口边框
-    width = right - left
-    height = bottom - top
-    if (width // height != 16 // 9):
-        left += 9; right -= 9; top += 37; bottom -= 10
+    # 计算原始尺寸
+    raw_width = right - left
+    raw_height = bottom - top
     
-    # 计算宽度和高度、缩放
+    if raw_width <= 0 or raw_height <= 0:
+        raise ValueError(f"窗口尺寸异常: {raw_width}x{raw_height}")
+    
+    # 判断是否接近16:9宽高比（允许±5%误差）
+    # 使用浮点除法而非整数除法
+    actual_ratio = raw_width / raw_height
+    is_16_9 = abs(actual_ratio - TARGET_ASPECT_RATIO) < 0.05
+    
+    # 如果不是标准16:9（窗口模式），减去窗口边框
+    if not is_16_9:
+        left += WINDOW_BORDER_LEFT
+        right -= WINDOW_BORDER_RIGHT
+        top += WINDOW_BORDER_TOP
+        bottom -= WINDOW_BORDER_BOTTOM
+    
+    # 计算客户区尺寸
     width = right - left
     height = bottom - top
-    scale = 1080 / height
+    
+    # 确保客户区尺寸有效
+    if width <= 0 or height <= 0:
+        raise ValueError(f"窗口客户区尺寸无效: {width}x{height}")
+    
+    # 计算缩放比例（基于高度）
+    scale = TARGET_HEIGHT / height if height > 0 else 1.0
+    
     return {
         'left': left,
         'top': top,
