@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "NTE_Nanally_Assistant"
-version = "0.2.0"
+version = "0.3.0"
 authors = [
     { name="Q-wind520", email="mg_fire1030@163.com" },
 ]
@@ -12,10 +12,18 @@ description = "NTE Nanally Assistant 为你轻松处理异环中的重复性劳�
 readme = "README.md"
 requires-python = "==3.12.8"
 
-# 这里是你的依赖项，如果你有 requirements.txt，可以在下面这行引用它
-# dependencies = [
-#     line.strip() for line in open("requirements.txt") if not line.startswith("#")
-# ]
+# 这里是你的依赖项
+dependencies = [
+    "mss==10.2.0",
+    "numpy==1.26.4",
+    "opencv-python==4.13.0.92",
+    "pillow==10.3.0",
+    "pyautogui==0.9.54",
+    "pydirectinput==1.0.4",
+    "pydirectinput_rgx==2.1.3",
+    "psutil==7.2.2",
+    "pywin32==306",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
