@@ -1,15 +1,14 @@
 import time
 import pydirectinput as pdi
-from core.packages.visual import click, msslocateOnScreen, wait_for_image
-from core.packages.tools import wait_1080
+from core.packages.visual import click, wait_for_image
+from core.packages.window import wait_for_1080p_resolution, get_hwnd, get_window
 
 
 def script_DianZhangTeGong_1_1(times):
     """times:执行次数"""
-    from core.packages.tools import get_hwnd, get_window
-    windowInfo = get_window(get_hwnd())
+    window_info = get_window(get_hwnd())
     base_path = './assets/DZTG_1-1/'
-    wait_1080()
+    wait_for_1080p_resolution()
     for i in range(times):
         print(f"Script: 正在执行脚本:店长特供_1-1,第{i+1}次")
 
@@ -22,7 +21,7 @@ def script_DianZhangTeGong_1_1(times):
             try:
                 click(f'{base_path}level.png')
             except:
-                pdi.moveTo(windowInfo['left']+100, windowInfo['top']+200)
+                pdi.moveTo(window_info.left + 100, window_info.top + 200)
                 pdi.scroll(1000)
                 time.sleep(0.2)
                 click(f'{base_path}level_null.png')

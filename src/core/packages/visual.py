@@ -21,7 +21,7 @@ import cv2
 import numpy as np
 import pydirectinput as pdi
 
-from core.packages.tools import get_window, get_hwnd
+from core.packages.window import get_window, get_hwnd, WindowInfo
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -73,18 +73,6 @@ class MatchResult:
     def box(self) -> Tuple[int, int, int, int]:
         """获取 (left, top, width, height) 元组"""
         return (self.left, self.top, self.width, self.height)
-
-
-@dataclass(frozen=True)
-class WindowInfo:
-    """窗口信息"""
-    left: int
-    top: int
-    right: int
-    bottom: int
-    width: int
-    height: int
-    scale: float
 
 
 # ==================== 图像缓存 ====================
@@ -193,15 +181,7 @@ class VisualLocator:
             if info is None:
                 raise RuntimeError("无法获取窗口信息")
             
-            self._window_info = WindowInfo(
-                left=info['left'],
-                top=info['top'],
-                right=info['right'],
-                bottom=info['bottom'],
-                width=info['width'],
-                height=info['height'],
-                scale=info['scale']
-            )
+            self._window_info = info
         return self._window_info
     
     def refresh_window_info(self) -> None:
@@ -651,22 +631,22 @@ class VisualInteractor:
 
 # ==================== 便捷函数（向后兼容） ====================
 
-def msslocateOnScreen(
-    image_path: str,
-    confidence: float = DEFAULT_CONFIDENCE,
-    screen_index: int = DEFAULT_SCREEN_INDEX
-) -> Optional[Tuple[int, int, int, int]]:
-    """
-    在指定屏幕中查找图片（向后兼容）
+# def msslocateOnScreen(
+#     image_path: str,
+#     confidence: float = DEFAULT_CONFIDENCE,
+#     screen_index: int = DEFAULT_SCREEN_INDEX
+# ) -> Optional[Tuple[int, int, int, int]]:
+#     """
+#     在指定屏幕中查找图片（向后兼容）
     
-    :param image_path: 模板图片路径
-    :param confidence: 匹配阈值 0~1
-    :param screen_index: mss 屏幕索引
-    :return: (left, top, width, height) or None
-    """
-    with VisualLocator(screen_index=screen_index, confidence=confidence) as locator:
-        result = locator.find_template(image_path)
-        return result.box if result else None
+#     :param image_path: 模板图片路径
+#     :param confidence: 匹配阈值 0~1
+#     :param screen_index: mss 屏幕索引
+#     :return: (left, top, width, height) or None
+#     """
+#     with VisualLocator(screen_index=screen_index, confidence=confidence) as locator:
+#         result = locator.find_template(image_path)
+#         return result.box if result else None
 
 
 def click(
@@ -701,7 +681,7 @@ def click(
 
 # ==================== 高级功能函数 ====================
 
-def wait_for_image(
+def wait_image_appear(
     image_path: str,
     timeout: float = DEFAULT_TIMEOUT,
     confidence: float = DEFAULT_CONFIDENCE
@@ -721,7 +701,7 @@ def wait_for_image(
         return locator.wait_for_template(image_path, timeout=timeout)
 
 
-def wait_for_image_disappear(
+def wait_image_disappear(
     image_path: str,
     timeout: float = DEFAULT_TIMEOUT,
     confidence: float = DEFAULT_CONFIDENCE
@@ -765,3 +745,7 @@ def find_all_images(
 def clear_image_cache() -> None:
     """清空图片缓存"""
     _image_cache.clear()
+
+
+# 向后兼容别名
+wait_for_image = wait_image_appear
