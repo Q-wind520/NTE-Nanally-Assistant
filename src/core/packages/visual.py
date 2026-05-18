@@ -747,5 +747,3 @@ def clear_image_cache() -> None:
     _image_cache.clear()
 
 
-# 向后兼容别名
-wait_for_image = wait_image_appear
