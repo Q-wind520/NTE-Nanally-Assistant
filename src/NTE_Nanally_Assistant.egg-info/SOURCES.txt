@@ -16,4 +16,3 @@ src/core/packages/window.py
 src/core/scripts/__init__.py
 src/core/scripts/DianZhangTeGong/_1_1.py
 src/core/scripts/DianZhangTeGong/_TuiGuanQia.py
-test/test.py

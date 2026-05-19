@@ -631,24 +631,6 @@ class VisualInteractor:
 
 # ==================== 便捷函数（向后兼容） ====================
 
-# def msslocateOnScreen(
-#     image_path: str,
-#     confidence: float = DEFAULT_CONFIDENCE,
-#     screen_index: int = DEFAULT_SCREEN_INDEX
-# ) -> Optional[Tuple[int, int, int, int]]:
-#     """
-#     在指定屏幕中查找图片（向后兼容）
-    
-#     :param image_path: 模板图片路径
-#     :param confidence: 匹配阈值 0~1
-#     :param screen_index: mss 屏幕索引
-#     :return: (left, top, width, height) or None
-#     """
-#     with VisualLocator(screen_index=screen_index, confidence=confidence) as locator:
-#         result = locator.find_template(image_path)
-#         return result.box if result else None
-
-
 def click(
     image_path: str,
     timeout: float = DEFAULT_TIMEOUT,

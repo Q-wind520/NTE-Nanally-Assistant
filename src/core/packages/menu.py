@@ -123,8 +123,8 @@ def _register_builtin_scripts() -> None:
     ))
 
     register_script("2", ScriptInfo(
-        name="店长特供_退关卡",
-        description="退出当前关卡（待实现）",
+        name="店长特供_推关卡",
+        description="使用娜娜莉和白藏的都市特技无脑推关卡（待实现）",
         runner=lambda: print("功能开发中..."),
         need_times_param=False
     ))
