@@ -216,11 +216,24 @@ class VisualLocator:
         
         mon = mss_inst.monitors[self.screen_index]
         x, y, w, h = region
-        
-        # 计算相对于监控器的坐标
+
+        # 将虚拟屏幕坐标转换为相对当前监控器的坐标
+        grab_left = x - mon["left"]
+        grab_top = y - mon["top"]
+
+        # 验证截图区域是否在监控器范围内，否则回退到虚拟桌面
+        if (grab_left < 0 or grab_top < 0 or
+                grab_left + w > mon["width"] or grab_top + h > mon["height"]):
+            logger.debug(
+                "截图区域超出监控器 %d 范围，回退到虚拟桌面 (screen_index=0)", self.screen_index
+            )
+            mon = mss_inst.monitors[0]
+            grab_left = x - mon["left"]
+            grab_top = y - mon["top"]
+
         grab_region = {
-            "left": mon["left"] + x,
-            "top": mon["top"] + y,
+            "left": grab_left,
+            "top": grab_top,
             "width": w,
             "height": h
         }
