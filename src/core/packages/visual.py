@@ -20,18 +20,21 @@ import mss
 import cv2
 import numpy as np
 import pydirectinput as pdi
+import win32gui
 
 from core.packages.window import get_window, get_hwnd, WindowInfo
+from core.packages.constants import (
+    DEFAULT_CONFIDENCE,
+    DEFAULT_TIMEOUT,
+    DEFAULT_INTERVAL,
+    DEFAULT_SCREEN_INDEX,
+    DEFAULT_CLICK_OFFSET,
+)
 
 # 配置日志
 logger = logging.getLogger(__name__)
 
-# ==================== 常量配置 ====================
-DEFAULT_CONFIDENCE = 0.8
-DEFAULT_TIMEOUT = 10.0
-DEFAULT_INTERVAL = 0.5
-DEFAULT_SCREEN_INDEX = 0
-DEFAULT_CLICK_OFFSET = (0, 0)  # 点击偏移量 (x, y)
+# 常量已迁移至 core.packages.constants，此处通过 import 获取
 
 
 # ==================== 数据类 ====================
@@ -80,16 +83,14 @@ class MatchResult:
 class ImageCache:
     """
     图像缓存管理器
-    
+
     使用 LRU 缓存避免重复读取同一图片文件
     """
     _instance: Optional[ImageCache] = None
-    _cache: dict
-    
+
     def __new__(cls) -> ImageCache:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance._cache = {}
         return cls._instance
     
     @lru_cache(maxsize=32)
@@ -114,7 +115,6 @@ class ImageCache:
     
     def clear(self) -> None:
         """清空缓存"""
-        self._cache.clear()
         self.load.cache_clear()
         logger.debug("图片缓存已清空")
 
@@ -148,7 +148,7 @@ class VisualLocator:
         self.confidence = confidence
         self._mss: Optional[mss.MSS] = None
         self._window_info: Optional[WindowInfo] = None
-        self._last_screenshot: Optional[np.ndarray] = None
+        self._window_hwnd: Optional[int] = None
     
     def __enter__(self) -> VisualLocator:
         """上下文管理器入口"""
@@ -174,19 +174,27 @@ class VisualLocator:
         return self._mss
     
     def _get_window_info(self) -> WindowInfo:
-        """获取并缓存窗口信息"""
+        """获取并缓存窗口信息，自动检测窗口重建"""
+        if self._window_info is not None and self._window_hwnd is not None:
+            if not win32gui.IsWindow(self._window_hwnd):
+                logger.debug("窗口已失效，刷新缓存")
+                self._window_info = None
+                self._window_hwnd = None
+
         if self._window_info is None:
             hwnd = get_hwnd()
             info = get_window(hwnd)
             if info is None:
                 raise RuntimeError("无法获取窗口信息")
-            
+
             self._window_info = info
+            self._window_hwnd = hwnd
         return self._window_info
-    
+
     def refresh_window_info(self) -> None:
         """刷新窗口信息缓存"""
         self._window_info = None
+        self._window_hwnd = None
         logger.debug("窗口信息缓存已刷新")
     
     def capture_screen(
@@ -212,7 +220,8 @@ class VisualLocator:
             scale = window.scale
         
         mss_inst = self.mss_instance
-        assert mss_inst is not None, "MSS 实例未初始化"
+        if mss_inst is None:
+            raise RuntimeError("MSS 实例未初始化")
         
         mon = mss_inst.monitors[self.screen_index]
         x, y, w, h = region
@@ -251,8 +260,7 @@ class VisualLocator:
                 fy=scale,
                 interpolation=cv2.INTER_AREA
             )
-        
-        self._last_screenshot = img_bgr
+
         return img_bgr
     
     def find_template(
@@ -302,11 +310,14 @@ class VisualLocator:
             left, top = max_loc
             width, height = tpl_w, tpl_h
         
-        # 加上区域偏移
+        # 加上区域偏移（转换为绝对屏幕坐标）
         if region:
             left += region[0]
             top += region[1]
-        
+        else:
+            left += window.left
+            top += window.top
+
         return MatchResult(left, top, width, height, max_val)
     
     def find_all_templates(
@@ -363,7 +374,10 @@ class VisualLocator:
             if region:
                 left += region[0]
                 top += region[1]
-            
+            else:
+                left += window.left
+                top += window.top
+
             matches.append(MatchResult(left, top, width, height, conf))
         
         # 非极大值抑制，去除重叠框
@@ -658,7 +672,7 @@ def click(
         image_path: 模板图片路径
         timeout: 查找超时时间（秒）
         confidence: 匹配置信度
-        timesleep: 点击前的等待时间
+        timesleep: 点击前的等待时间（默认0.5秒）
         on_failure: 失败时的回调函数
         
     Returns:

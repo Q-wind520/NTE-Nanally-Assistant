@@ -20,10 +20,21 @@ import win32process
 from win32con import SW_SHOWNORMAL
 
 from psutil import process_iter
+from core.packages.constants import (
+    WINDOW_BORDER_LEFT,
+    WINDOW_BORDER_RIGHT,
+    WINDOW_BORDER_TOP,
+    WINDOW_BORDER_BOTTOM,
+    TARGET_ASPECT_RATIO,
+    TARGET_HEIGHT,
+    ASPECT_RATIO_TOLERANCE,
+    DEFAULT_PROCESS_NAME,
+)
 
 logger = logging.getLogger(__name__)
 
-# ==================== 数据类 ====================
+# 常量已迁移至 core.packages.constants
+# 此处重新导出以保持向后兼容
 
 @dataclass
 class WindowInfo:
@@ -48,21 +59,7 @@ class WindowInfo:
     scale: float
 
 
-# ==================== 常量配置 ====================
-
-# 窗口边框常量（针对异环游戏窗口）
-WINDOW_BORDER_LEFT = 9
-WINDOW_BORDER_RIGHT = 9
-WINDOW_BORDER_TOP = 37
-WINDOW_BORDER_BOTTOM = 10
-
-# 目标分辨率
-TARGET_ASPECT_RATIO = 16.0 / 9.0  # 16:9 宽高比
-TARGET_HEIGHT = 1080
-ASPECT_RATIO_TOLERANCE = 0.05  # 宽高比容差
-
-# 默认进程名
-DEFAULT_PROCESS_NAME = "HTGame.exe"
+# 常量已迁移至 core.packages.constants，此处通过 import 获取
 
 
 # ==================== 异常类 ====================
@@ -113,7 +110,7 @@ def get_hwnd(name: str = DEFAULT_PROCESS_NAME) -> int:
     def callback(hwnd: int, _: object) -> None:
         if win32gui.IsWindowVisible(hwnd):
             _, window_pid = win32process.GetWindowThreadProcessId(hwnd)
-            if window_pid == pid:
+            if window_pid == pid and win32gui.GetWindowText(hwnd):
                 result.append(hwnd)
 
     win32gui.EnumWindows(callback, None)
@@ -249,7 +246,7 @@ def wait_for_1080p_resolution(
         elapsed = time.time() - start_time
 
         if elapsed < 5:
-            logger.error("不能执行脚本，请将游戏窗口化为 1920×1080 分辨率")
+            logger.warning("不能执行脚本，请将游戏窗口化为 1920×1080 分辨率")
             logger.info("正在等待你为其窗口化...")
             time.sleep(5)
         elif elapsed < timeout:

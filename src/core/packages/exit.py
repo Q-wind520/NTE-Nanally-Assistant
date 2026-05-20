@@ -7,21 +7,23 @@
 
 from __future__ import annotations
 
+import sys
 import time
 import logging
-from typing import Optional
+from core.packages.constants import (
+    DEFAULT_WIDTH,
+    DEFAULT_TITLE,
+    DEFAULT_VERSION,
+    DEFAULT_AUTHOR,
+    DEFAULT_MESSAGE,
+    DEFAULT_DELAY,
+    DEFAULT_BORDER_CHAR,
+    DEFAULT_SIDE_CHAR,
+)
 
 logger = logging.getLogger(__name__)
 
-# 默认配置
-DEFAULT_WIDTH = 75
-DEFAULT_TITLE = "NTE Nanally Assistant"
-DEFAULT_VERSION = "0.2.0"
-DEFAULT_AUTHOR = "Q-wind520"
-DEFAULT_MESSAGE = "See You Next Time!"
-DEFAULT_DELAY = 1.0
-DEFAULT_BORDER_CHAR = "="
-DEFAULT_SIDE_CHAR = "|"
+# 常量已迁移至 core.packages.constants，此处通过 import 获取
 
 
 def _center_text(text: str, total_width: int, fill_char: str = " ") -> str:
@@ -109,4 +111,4 @@ def exit_program(
         border_char=border_char,
         side_char=side_char
     )
-    exit(0)
+    sys.exit(0)

@@ -12,9 +12,11 @@ from __future__ import annotations
 
 import time
 import logging
+import traceback
 from dataclasses import dataclass
 from typing import Callable, Optional
 
+from core.packages.constants import DEFAULT_VERSION
 from core.packages.window import activate_window, WindowNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -114,6 +116,7 @@ def register_script(key: str, script: ScriptInfo) -> None:
 def _register_builtin_scripts() -> None:
     """注册内置脚本（延迟导入避免循环依赖）"""
     from core.scripts.DianZhangTeGong._1_1 import script_DianZhangTeGong_1_1
+    from core.scripts.DianZhangTeGong._TuiGuanQia import script_DianZhangTeGong_TuiGuanQia
 
     register_script("1", ScriptInfo(
         name="店长特供_1-1",
@@ -124,9 +127,9 @@ def _register_builtin_scripts() -> None:
 
     register_script("2", ScriptInfo(
         name="店长特供_推关卡",
-        description="使用娜娜莉和白藏的都市特技无脑推关卡（待实现）",
-        runner=lambda: print("功能开发中..."),
-        need_times_param=False
+        description="使用娜娜莉和白藏的都市特技无脑推关卡",
+        runner=script_DianZhangTeGong_TuiGuanQia,
+        need_times_param=True
     ))
 
 
@@ -184,6 +187,7 @@ def display_menu(scripts: dict[str, ScriptInfo]) -> None:
         scripts: 脚本字典
     """
     print("\n" + "=" * 40)
+    print(f"NTE Nanally Assistant v{DEFAULT_VERSION}")
     print("脚本菜单:")
     print("-" * 40)
     for key, info in scripts.items():
@@ -251,7 +255,6 @@ def run_menu(exit_func: Callable[[], None]) -> None:
             continue
         except Exception as e:
             print(f"\nError: 执行异常: {e}")
-            import traceback
             traceback.print_exc()
             print("\n按回车键继续...")
             input()

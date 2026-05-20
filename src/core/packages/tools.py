@@ -12,7 +12,6 @@
 from __future__ import annotations
 
 import warnings
-from typing import Callable, Optional
 
 # ==================== 进程检测（来自 process.py） ====================
 
@@ -23,7 +22,7 @@ from core.packages.process import (
 )
 
 # 向后兼容别名
-is_HTGame_running = wait_for_game_process
+is_HTGame_running = is_process_running
 
 
 # ==================== 窗口管理（来自 window.py） ====================

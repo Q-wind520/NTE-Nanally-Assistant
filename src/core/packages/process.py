@@ -10,16 +10,18 @@ from __future__ import annotations
 
 import time
 import logging
-from typing import Optional
 
 from psutil import process_iter
+from core.packages.constants import (
+    DEFAULT_PROCESS_NAME,
+    DEFAULT_PROCESS_TIMEOUT as DEFAULT_TIMEOUT,
+    DEFAULT_PROCESS_CHECK_INTERVAL as DEFAULT_CHECK_INTERVAL,
+)
 
 logger = logging.getLogger(__name__)
 
-# 默认配置
-DEFAULT_PROCESS_NAME = "HTGame.exe"
-DEFAULT_TIMEOUT = 300  # 默认超时时间（秒）
-DEFAULT_CHECK_INTERVAL = 2  # 默认检查间隔（秒）
+# 默认配置（从 constants 模块导入）
+# DEFAULT_PROCESS_NAME, DEFAULT_TIMEOUT, DEFAULT_CHECK_INTERVAL 见上方 import
 
 
 class ProcessTimeoutError(RuntimeError):
