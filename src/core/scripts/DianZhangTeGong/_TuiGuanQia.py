@@ -4,6 +4,9 @@ from core.packages.visual import click, wait_image_appear
 from core.packages.window import wait_for_1080p_resolution, get_hwnd, get_window
 
 
+def xxx():
+    pass
+
 def script_DianZhangTeGong_TuiGuanQia(times):
     base_path = './assets/DZTG_TuiGuanQia/'
     window_info = get_window(get_hwnd())
@@ -14,8 +17,13 @@ def script_DianZhangTeGong_TuiGuanQia(times):
     time.sleep(2)
     pdi.press('f')
     print("Script:已键入F")
-    time.sleep(2)
-
+    xxx()# 选关卡
+    click('./assets/DZTG_1-1/start.png')
+    wait_image_appear('./assets/DZTG_1-1/time59.png')
+    while not wait_image_appear('./assets/DZTG_1-1/completed.png'):
+        click(f'{base_path}hammer.png')
+    click('./assets/DZTG_1-1/exit.png')
+    click('./assets/DZTG_1-1/reward.png')
 
 
 
