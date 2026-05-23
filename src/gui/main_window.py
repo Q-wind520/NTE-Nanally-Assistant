@@ -50,7 +50,7 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle(f"{DEFAULT_TITLE} v{DEFAULT_VERSION}")
-        self.resize(800, 600)
+        self.resize(960, 540)
 
         icon = _icon_path()
         if icon:

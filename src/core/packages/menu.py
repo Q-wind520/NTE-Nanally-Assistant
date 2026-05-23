@@ -17,7 +17,6 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 
 from core.packages.constants import DEFAULT_VERSION
-from core.packages.window import activate_window, WindowNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -235,12 +234,6 @@ def run_menu(exit_func: Callable[[], None]) -> None:
             # 准备执行
             print(f"\n准备执行: {script.name}")
             time.sleep(0.5)
-
-            # 激活窗口（非退出操作）
-            try:
-                activate_window()
-            except WindowNotFoundError as e:
-                print(f"Warn: 窗口激活失败，继续执行: {e}")
 
             # 执行脚本
             if times is not None:

@@ -1,14 +1,14 @@
 import time
 import pydirectinput as pdi
 from core.packages.visual import click, wait_image_appear
-from core.packages.window import wait_for_1080p_resolution, get_hwnd, get_window
+from core.packages.window import get_hwnd, get_window, activate_window
 
 
 def script_DianZhangTeGong_1_1(times):
     """times:执行次数"""
+    activate_window()
     window_info = get_window(get_hwnd())
     base_path = './assets/DZTG_1-1/'
-    wait_for_1080p_resolution()
     for i in range(times):
         print(f"Script: 正在执行脚本: 店长特供_1-1,第{i+1}次")
 
