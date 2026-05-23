@@ -1,11 +1,49 @@
+import ctypes
+import logging
 import sys
+from pathlib import Path
+
+# src/ 必须在 import core/gui 之前加入 sys.path
+_src_dir = Path(__file__).resolve().parent.parent
+if str(_src_dir) not in sys.path:
+    sys.path.insert(0, str(_src_dir))
+
+# DPI 感知必须在 QApplication 创建之前设置
+ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
 from PySide6.QtWidgets import QApplication
-from PySide6.QtQuick import QQuickView
+from PySide6.QtCore import Qt
+
+from gui.log_handler import QtLogHandler, QtStreamRedirector, get_log_signal
+from gui.main_window import MainWindow
+
+
+def main() -> None:
+    # 配置根日志器
+    logging.getLogger().setLevel(logging.INFO)
+
+    app = QApplication(sys.argv)
+    app.setApplicationName("NTE Nanally Assistant")
+
+    # 安装日志桥接 — 捕获 logging 输出
+    qt_handler = QtLogHandler(level=logging.INFO)
+    logging.getLogger().addHandler(qt_handler)
+
+    # 安装 stdout 桥接 — 捕获脚本中的 print() 输出
+    stdout_redirector = QtStreamRedirector()
+    stdout_redirector.new_text.connect(
+        get_log_signal().message, Qt.ConnectionType.QueuedConnection
+    )
+    sys.stdout = stdout_redirector
+
+    # 日志初始化信息
+    logging.getLogger(__name__).info("GUI 启动完成")
+
+    window = MainWindow()
+    window.show()
+
+    sys.exit(app.exec())
+
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)                                                # 1.创建一个QApplication类的实例
-    view = QQuickView()                                                         # 2.创建QML视图对象
-    view.setSource("src/gui/ui.qml")                                                    # 3.加载QML文件 
-    view.show()                                                                 # 4.显示QML视图对象
-    sys.exit(app.exec())                                                        # 5.进入程序的主循环并通过exit()函数确保主循环安全结束
+    main()

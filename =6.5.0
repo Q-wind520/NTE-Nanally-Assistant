@@ -1,0 +1,12 @@
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Collecting pyside6
+  Using cached pyside6-6.11.1-cp310-abi3-win_amd64.whl (578 kB)
+Collecting shiboken6==6.11.1 (from pyside6)
+  Using cached shiboken6-6.11.1-cp310-abi3-win_amd64.whl (1.2 MB)
+Collecting PySide6_Essentials==6.11.1 (from pyside6)
+  Using cached pyside6_essentials-6.11.1-cp310-abi3-win_amd64.whl (77.5 MB)
+Collecting PySide6_Addons==6.11.1 (from pyside6)
+  Using cached pyside6_addons-6.11.1-cp310-abi3-win_amd64.whl (168.8 MB)
+Installing collected packages: shiboken6, PySide6_Essentials, PySide6_Addons, pyside6
+
+Successfully installed PySide6_Addons-6.11.1 PySide6_Essentials-6.11.1 pyside6-6.11.1 shiboken6-6.11.1
