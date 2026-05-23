@@ -23,16 +23,13 @@ from core.packages.constants import (
 
 logger = logging.getLogger(__name__)
 
-# 常量已迁移至 core.packages.constants，此处通过 import 获取
-
 
 def _center_text(text: str, total_width: int, fill_char: str = " ") -> str:
     """将文本居中，两侧填充指定字符"""
-    if len(text) >= total_width - 2:
-        return text[:total_width - 2]
-    left_pad = (total_width - len(text) - 2) // 2
-    right_pad = total_width - len(text) - 2 - left_pad
-    return fill_char * left_pad + text + fill_char * right_pad
+    inner_width = total_width - 2
+    if len(text) >= inner_width:
+        return text[:inner_width]
+    return text.center(inner_width, fill_char)
 
 
 def show_farewell(

@@ -185,6 +185,7 @@ class MainWindow(QMainWindow):
         if self._worker is None or not self._worker.isRunning():
             return
         self._append_log("[WARN] 正在强制终止脚本...")
+        self._worker.finished.disconnect(self._on_worker_done)
         self._worker.terminate()
         self._worker.wait(3000)
         self._on_worker_done()

@@ -27,7 +27,6 @@ class QtStreamRedirector(QObject):
 
     def __init__(self) -> None:
         super().__init__()
-        self._buffer = ""
 
     def write(self, text: str) -> None:
         if text:

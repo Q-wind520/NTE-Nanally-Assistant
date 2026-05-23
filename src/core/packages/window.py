@@ -33,9 +33,6 @@ from core.packages.constants import (
 
 logger = logging.getLogger(__name__)
 
-# 常量已迁移至 core.packages.constants
-# 此处重新导出以保持向后兼容
-
 @dataclass
 class WindowInfo:
     """
@@ -59,10 +56,7 @@ class WindowInfo:
     scale: float
 
 
-# 常量已迁移至 core.packages.constants，此处通过 import 获取
-
-
-# ==================== 异常类 ====================
+# 异常类
 
 class WindowNotFoundError(RuntimeError):
     """窗口未找到异常"""

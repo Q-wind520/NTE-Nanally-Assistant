@@ -34,10 +34,8 @@ from core.packages.constants import (
 # 配置日志
 logger = logging.getLogger(__name__)
 
-# 常量已迁移至 core.packages.constants，此处通过 import 获取
 
-
-# ==================== 数据类 ====================
+# 数据类
 
 @dataclass(frozen=True)
 class MatchResult:
@@ -78,52 +76,19 @@ class MatchResult:
         return (self.left, self.top, self.width, self.height)
 
 
-# ==================== 图像缓存 ====================
+# 图像缓存
 
-class ImageCache:
-    """
-    图像缓存管理器
-
-    使用 LRU 缓存避免重复读取同一图片文件
-    """
-    _instance: Optional[ImageCache] = None
-
-    def __new__(cls) -> ImageCache:
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-    
-    @lru_cache(maxsize=32)
-    def load(self, image_path: str) -> np.ndarray:
-        """
-        加载并缓存图片
-        
-        Args:
-            image_path: 图片文件路径
-            
-        Returns:
-            加载的 BGR 格式图像数组
-            
-        Raises:
-            FileNotFoundError: 图片文件不存在
-        """
-        image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-        if image is None:
-            raise FileNotFoundError(f"图片未找到或无法读取: {image_path}")
-        logger.debug(f"已加载图片: {image_path}, 尺寸: {image.shape[1]}x{image.shape[0]}")
-        return image
-    
-    def clear(self) -> None:
-        """清空缓存"""
-        self.load.cache_clear()
-        logger.debug("图片缓存已清空")
+@lru_cache(maxsize=32)
+def _load_image(image_path: str) -> np.ndarray:
+    """加载并缓存图片。已通过 lru_cache 自动缓存。"""
+    image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+    if image is None:
+        raise FileNotFoundError(f"图片未找到或无法读取: {image_path}")
+    logger.debug(f"已加载图片: {image_path}, 尺寸: {image.shape[1]}x{image.shape[0]}")
+    return image
 
 
-# 全局缓存实例
-_image_cache = ImageCache()
-
-
-# ==================== 核心类 ====================
+# 核心类
 
 class VisualLocator:
     """
@@ -263,6 +228,29 @@ class VisualLocator:
 
         return img_bgr
     
+    def _to_absolute_coords(
+        self, match_x: int, match_y: int, tpl_w: int, tpl_h: int,
+        region: Optional[Tuple[int, int, int, int]] = None
+    ) -> Tuple[int, int, int, int]:
+        """将模板匹配坐标转换为绝对屏幕坐标"""
+        window = self._get_window_info()
+        scale = window.scale
+        if scale != 1.0:
+            left = int(match_x / scale)
+            top = int(match_y / scale)
+            width = int(tpl_w / scale)
+            height = int(tpl_h / scale)
+        else:
+            left, top = match_x, match_y
+            width, height = tpl_w, tpl_h
+        if region:
+            left += region[0]
+            top += region[1]
+        else:
+            left += window.left
+            top += window.top
+        return left, top, width, height
+
     def find_template(
         self,
         template_path: str,
@@ -284,7 +272,7 @@ class VisualLocator:
             confidence = self.confidence
         
         # 加载模板
-        template = _image_cache.load(template_path)
+        template = _load_image(template_path)
         tpl_h, tpl_w = template.shape[:2]
         
         # 捕获屏幕
@@ -296,28 +284,10 @@ class VisualLocator:
         
         if max_val < confidence:
             return None
-        
-        # 计算原始坐标
-        window = self._get_window_info()
-        scale = window.scale
-        
-        if scale != 1.0:
-            left = int(max_loc[0] / scale)
-            top = int(max_loc[1] / scale)
-            width = int(tpl_w / scale)
-            height = int(tpl_h / scale)
-        else:
-            left, top = max_loc
-            width, height = tpl_w, tpl_h
-        
-        # 加上区域偏移（转换为绝对屏幕坐标）
-        if region:
-            left += region[0]
-            top += region[1]
-        else:
-            left += window.left
-            top += window.top
 
+        left, top, width, height = self._to_absolute_coords(
+            max_loc[0], max_loc[1], tpl_w, tpl_h, region
+        )
         return MatchResult(left, top, width, height, max_val)
     
     def find_all_templates(
@@ -342,7 +312,7 @@ class VisualLocator:
         if confidence is None:
             confidence = self.confidence
         
-        template = _image_cache.load(template_path)
+        template = _load_image(template_path)
         tpl_h, tpl_w = template.shape[:2]
         screenshot = self.capture_screen(region)
         
@@ -353,30 +323,16 @@ class VisualLocator:
         locations = np.where(result >= confidence)
         
         matches: List[MatchResult] = []
-        window = self._get_window_info()
-        scale = window.scale
-        
+
         for pt in zip(*locations[::-1]):
             if len(matches) >= max_results:
                 break
-            
+
             conf = float(result[pt[1], pt[0]])
-            
-            if scale != 1.0:
-                left = int(pt[0] / scale)
-                top = int(pt[1] / scale)
-                width = int(tpl_w / scale)
-                height = int(tpl_h / scale)
-            else:
-                left, top = pt
-                width, height = tpl_w, tpl_h
-            
-            if region:
-                left += region[0]
-                top += region[1]
-            else:
-                left += window.left
-                top += window.top
+
+            left, top, width, height = self._to_absolute_coords(
+                pt[0], pt[1], tpl_w, tpl_h, region
+            )
 
             matches.append(MatchResult(left, top, width, height, conf))
         
@@ -539,6 +495,20 @@ class VisualInteractor:
         if self._own_locator and isinstance(self.locator, VisualLocator):
             self.locator.close()
     
+    def _resolve_target(
+        self, target: Union[str, MatchResult, Tuple[int, int]]
+    ) -> Optional[Tuple[int, int]]:
+        """将目标解析为 (x, y) 坐标。模板未找到时返回 None。"""
+        if isinstance(target, str):
+            result = self.locator.find_template(target)
+            if result is None:
+                return None
+            return result.center
+        elif isinstance(target, MatchResult):
+            return target.center
+        else:
+            return target
+
     def click(
         self,
         target: Union[str, MatchResult, Tuple[int, int]],
@@ -547,30 +517,12 @@ class VisualInteractor:
         clicks: int = 1,
         interval: float = 0.0
     ) -> bool:
-        """
-        点击目标位置
-        
-        Args:
-            target: 模板路径、匹配结果或坐标元组 (x, y)
-            offset: 点击偏移量 (x, y)
-            button: 鼠标按钮 ("left", "right", "middle")
-            clicks: 点击次数
-            interval: 多次点击间隔
-            
-        Returns:
-            True-成功, False-失败
-        """
-        if isinstance(target, str):
-            result = self.locator.find_template(target)
-            if result is None:
-                logger.warning(f"点击失败，未找到模板: {target}")
-                return False
-            x, y = result.center
-        elif isinstance(target, MatchResult):
-            x, y = target.center
-        else:
-            x, y = target
-        
+        """点击目标位置。支持模板路径、匹配结果或坐标元组。"""
+        coords = self._resolve_target(target)
+        if coords is None:
+            logger.warning(f"点击失败，未找到模板: {target}")
+            return False
+        x, y = coords
         x += offset[0]
         y += offset[1]
         
@@ -625,26 +577,11 @@ class VisualInteractor:
         target: Union[str, MatchResult, Tuple[int, int]],
         offset: Tuple[int, int] = DEFAULT_CLICK_OFFSET
     ) -> bool:
-        """
-        移动鼠标到目标位置
-        
-        Args:
-            target: 模板路径、匹配结果或坐标
-            offset: 偏移量
-            
-        Returns:
-            True-成功, False-失败
-        """
-        if isinstance(target, str):
-            result = self.locator.find_template(target)
-            if result is None:
-                return False
-            x, y = result.center
-        elif isinstance(target, MatchResult):
-            x, y = target.center
-        else:
-            x, y = target
-        
+        """移动鼠标到目标位置。支持模板路径、匹配结果或坐标元组。"""
+        coords = self._resolve_target(target)
+        if coords is None:
+            return False
+        x, y = coords
         x += offset[0]
         y += offset[1]
         
@@ -655,8 +592,7 @@ class VisualInteractor:
             logger.error(f"移动鼠标失败: {e}")
             return False
 
-
-# ==================== 便捷函数（向后兼容） ====================
+# 便捷函数
 
 def click(
     image_path: str,
@@ -688,7 +624,7 @@ def click(
         )
 
 
-# ==================== 高级功能函数 ====================
+# 高级功能函数
 
 def wait_image_appear(
     image_path: str,
@@ -748,11 +684,5 @@ def find_all_images(
     """
     with VisualLocator(confidence=confidence) as locator:
         return locator.find_all_templates(image_path, max_results=max_results)
-
-
-# 清理缓存的便捷函数
-def clear_image_cache() -> None:
-    """清空图片缓存"""
-    _image_cache.clear()
 
 

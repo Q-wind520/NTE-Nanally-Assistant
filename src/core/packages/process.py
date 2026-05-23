@@ -20,9 +20,6 @@ from core.packages.constants import (
 
 logger = logging.getLogger(__name__)
 
-# 默认配置（从 constants 模块导入）
-# DEFAULT_PROCESS_NAME, DEFAULT_TIMEOUT, DEFAULT_CHECK_INTERVAL 见上方 import
-
 
 class ProcessTimeoutError(RuntimeError):
     """进程等待超时异常"""
@@ -79,9 +76,8 @@ def wait_for_game_process(
             )
 
         # 每 10 秒打印一次警告
-        current_time = int(elapsed)
-        if current_time % 10 == 1 and current_time != last_warn_time:
-            last_warn_time = current_time
+        if elapsed - last_warn_time >= 10:
+            last_warn_time = int(elapsed)
             logger.warning("未检测到 %s 进程，等待游戏启动 (%ds/%ds)",
                           name, int(elapsed), int(timeout))
 

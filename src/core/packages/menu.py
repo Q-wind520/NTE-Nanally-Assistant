@@ -236,10 +236,7 @@ def run_menu(exit_func: Callable[[], None]) -> None:
             time.sleep(0.5)
 
             # 执行脚本
-            if times is not None:
-                script.run(times)
-            else:
-                script.run()
+            script.run(times)
 
             print(f"\n脚本 '{script.name}' 执行完成\n")
 
