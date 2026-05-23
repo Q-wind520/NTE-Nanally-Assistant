@@ -306,12 +306,5 @@ class MainWindow(QMainWindow):
     # closeEvent
     # ------------------------------------------------------------------
 
-    def closeEvent(self, event) -> None:
-        event.ignore()
-        self.hide()
-        self._tray.showMessage(
-            f"{DEFAULT_TITLE}",
-            "已最小化到系统托盘，右键托盘图标可恢复窗口或退出",
-            QSystemTrayIcon.MessageIcon.Information,
-            3000,
-        )
+    def closeEvent(self, _event) -> None:
+        self._quit_app()
