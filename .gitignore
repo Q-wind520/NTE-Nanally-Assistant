@@ -9,3 +9,5 @@
 /test
 /.claude
 *.pyc
+/NTE_Nanally_Assistant.egg-info
+debug_screenshot.png
