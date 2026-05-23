@@ -1,6 +1,6 @@
 import time
 import pydirectinput as pdi
-from core.packages.visual import click, wait_image_appear
+from core.packages.visual import click, wait_image_appear, scroll
 from core.packages.window import get_hwnd, get_window, activate_window
 
 
@@ -22,7 +22,7 @@ def script_DianZhangTeGong_1_1(times):
                 click(f'{base_path}level.png')
             except Exception:
                 pdi.moveTo(window_info.left + 100, window_info.top + 200)
-                pdi.scroll(1000)
+                scroll(1000)
                 time.sleep(0.2)
                 click(f'{base_path}level_null.png')
             time.sleep(0.2)

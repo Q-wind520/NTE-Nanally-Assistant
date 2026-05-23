@@ -20,6 +20,8 @@ import mss
 import cv2
 import numpy as np
 import pydirectinput as pdi
+import win32api
+import win32con
 import win32gui
 
 from core.packages.window import get_window, get_hwnd, WindowInfo
@@ -664,6 +666,16 @@ def wait_image_disappear(
     """
     with VisualLocator(confidence=confidence) as locator:
         return locator.wait_for_template_disappear(image_path, timeout=timeout)
+
+
+def scroll(amount: int) -> None:
+    """
+    鼠标滚轮滚动
+
+    Args:
+        amount: 滚动量，正数向上滚动，负数向下滚动
+    """
+    win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, amount, 0)
 
 
 def find_all_images(
