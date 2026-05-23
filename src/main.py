@@ -3,8 +3,8 @@ import logging
 import sys
 from pathlib import Path
 
-# src/ 必须在 import core/gui 之前加入 sys.path
-_src_dir = Path(__file__).resolve().parent.parent
+# 确保 src/ 在 sys.path 中（直接运行时需要）
+_src_dir = Path(__file__).resolve().parent
 if str(_src_dir) not in sys.path:
     sys.path.insert(0, str(_src_dir))
 

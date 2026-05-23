@@ -1,22 +1,16 @@
 """
-菜单系统模块 - 脚本注册表与交互式菜单
+脚本注册表模块
 
 提供以下功能：
 - 脚本信息数据类
 - 脚本注册与管理
-- 交互式菜单选择
-- 用户输入验证
 """
 
 from __future__ import annotations
 
-import time
 import logging
-import traceback
 from dataclasses import dataclass
 from typing import Callable, Optional
-
-from core.packages.constants import DEFAULT_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -132,119 +126,3 @@ def _register_builtin_scripts() -> None:
     ))
 
 
-def _register_exit_script(exit_func: Callable[[], None]) -> None:
-    """注册退出脚本"""
-    register_script("0", ScriptInfo(
-        name="退出",
-        description="退出程序",
-        runner=exit_func,
-        need_times_param=False
-    ))
-
-
-# ==================== 用户交互 ====================
-
-def get_positive_int(
-    prompt: str,
-    min_val: int = 1,
-    max_val: int = 9999
-) -> int:
-    """
-    获取用户输入的正整数
-
-    Args:
-        prompt: 输入提示
-        min_val: 最小值
-        max_val: 最大值
-
-    Returns:
-        有效的正整数
-    """
-    while True:
-        try:
-            value = input(prompt).strip()
-            if not value:
-                print("Error: 输入不能为空")
-                continue
-            num = int(value)
-            if num < min_val:
-                print(f"Error: 输入值必须大于等于 {min_val}")
-                continue
-            if num > max_val:
-                print(f"Error: 输入值必须小于等于 {max_val}")
-                continue
-            return num
-        except ValueError:
-            print("Error: 请输入有效的整数")
-
-
-def display_menu(scripts: dict[str, ScriptInfo]) -> None:
-    """
-    显示菜单
-
-    Args:
-        scripts: 脚本字典
-    """
-    print("\n" + "=" * 40)
-    print(f"NTE Nanally Assistant v{DEFAULT_VERSION}")
-    print("脚本菜单:")
-    print("-" * 40)
-    for key, info in scripts.items():
-        marker = "  " if key != "0" else "* "
-        print(f"{marker}{key}: {info.name:<15} - {info.description}")
-    print("=" * 40)
-
-
-def run_menu(exit_func: Callable[[], None]) -> None:
-    """
-    运行交互式脚本菜单
-
-    提供脚本选择、参数输入和执行功能。
-
-    Args:
-        exit_func: 退出程序时调用的函数
-    """
-    # 注册内置脚本
-    _register_builtin_scripts()
-    _register_exit_script(exit_func)
-
-    scripts = _registry.get_all()
-
-    while True:
-        try:
-            display_menu(scripts)
-            choice = input("请输入数字选择脚本: ").strip()
-
-            if choice not in scripts:
-                print(f"Error: 无效的选择 '{choice}'，请输入有效的数字")
-                continue
-
-            script = scripts[choice]
-
-            # 执行退出
-            if choice == "0":
-                script.run()
-                return
-
-            # 获取执行次数（如果需要）
-            times = None
-            if script.need_times_param:
-                times = get_positive_int("请输入执行次数: ", min_val=1, max_val=9999)
-
-            # 准备执行
-            print(f"\n准备执行: {script.name}")
-            time.sleep(0.5)
-
-            # 执行脚本
-            script.run(times)
-
-            print(f"\n脚本 '{script.name}' 执行完成\n")
-
-        except KeyboardInterrupt:
-            print("\n\n用户取消操作，返回菜单...")
-            continue
-        except Exception as e:
-            print(f"\nError: 执行异常: {e}")
-            traceback.print_exc()
-            print("\n按回车键继续...")
-            input()

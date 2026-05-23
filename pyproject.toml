@@ -23,12 +23,8 @@ dependencies = [
     "pyside6>=6.5.0,<7.0.0",
 ]
 
-[project.optional-dependencies]
-gui = ["pyside6>=6.5.0,<7.0.0"]
-
 [project.scripts]
-nanally = "core.main:main"
-nanally-gui = "gui.main:main"
+nanally = "main:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
