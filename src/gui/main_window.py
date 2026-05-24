@@ -24,7 +24,10 @@ from PySide6.QtWidgets import (
     QMessageBox,
 )
 
-from core.packages.constants import DEFAULT_PROCESS_NAME, DEFAULT_TITLE, DEFAULT_VERSION
+from core.packages.constants import (
+    DEFAULT_PROCESS_NAME, DEFAULT_TITLE, DEFAULT_VERSION,
+    TARGET_ASPECT_RATIO, ASPECT_RATIO_TOLERANCE,
+)
 from core.packages.process import is_process_running
 from core.packages.window import get_hwnd, get_window, WindowNotFoundError, WindowInvalidError
 from core.packages.menu import _register_builtin_scripts, get_registry
@@ -173,6 +176,25 @@ class MainWindow(QMainWindow):
             self._append_log("[WARN] 已有脚本正在运行，请先停止")
             return
 
+        # 检查窗口宽高比是否为16:9
+        try:
+            hwnd = get_hwnd(DEFAULT_PROCESS_NAME)
+            win = get_window(hwnd)
+            actual_ratio = win.width / win.height
+            if abs(actual_ratio - TARGET_ASPECT_RATIO) >= ASPECT_RATIO_TOLERANCE:
+                QMessageBox.warning(
+                    self, "宽高比不适配",
+                    f"当前窗口宽高比不适配（{win.width}×{win.height}），\n"
+                    "请将游戏窗口调整为16:9宽高比后再执行脚本。"
+                )
+                return
+        except (WindowNotFoundError, WindowInvalidError):
+            QMessageBox.warning(
+                self, "未检测到游戏窗口",
+                "请先启动游戏并确保窗口可见后再执行脚本。"
+            )
+            return
+
         times = self._times_spin.value() if info.need_times_param else None
         self._worker = ScriptWorker(info, times)
         self._worker.started_signal.connect(self._on_worker_started)
@@ -244,8 +266,16 @@ class MainWindow(QMainWindow):
         try:
             hwnd = get_hwnd(DEFAULT_PROCESS_NAME)
             win = get_window(hwnd)
-            self._resolution_label.setText(f"分辨率: {win.width}×{win.height}")
-            self._resolution_label.setStyleSheet("color: green; font-weight: bold;")
+            actual_ratio = win.width / win.height
+            is_16_9 = abs(actual_ratio - TARGET_ASPECT_RATIO) < ASPECT_RATIO_TOLERANCE
+            if is_16_9:
+                self._resolution_label.setText(f"分辨率: {win.width}×{win.height}")
+                self._resolution_label.setStyleSheet("color: green; font-weight: bold;")
+            else:
+                self._resolution_label.setText(
+                    f"分辨率: {win.width}×{win.height} - 宽高比不适配，请调整为16:9"
+                )
+                self._resolution_label.setStyleSheet("color: yellow; font-weight: bold;")
         except (WindowNotFoundError, WindowInvalidError):
             self._resolution_label.setText("分辨率: 未检测到窗口")
             self._resolution_label.setStyleSheet("color: red; font-weight: bold;")
