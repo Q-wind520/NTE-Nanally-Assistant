@@ -1,7 +1,6 @@
 *.log
 /build
 /dist
-*.spec
 /.vscode
 /.venv
 /.idea
