@@ -12,39 +12,35 @@ def script_DianZhangTeGong_1_1(times):
     for i in range(times):
         print(f"Script: 正在执行脚本: 店长特供_1-1,第{i+1}次")
 
-        time.sleep(2)
+        wait_image_appear(f'{base_path}join.png')
         pdi.press('f')
-        print("Script:已键入F")
-        time.sleep(2)
 
         if i == 0:
             try:
-                click(f'{base_path}level.png')
-            except Exception:
+                wait_image_appear(f'{base_path}level.png')
+            except:
                 pdi.moveTo(window_info.left + 100, window_info.top + 200)
                 scroll(1000)
                 time.sleep(0.2)
                 click(f'{base_path}level_null.png')
-            time.sleep(0.2)
 
         click(f'{base_path}start.png')
-        print("Script: 已点击营业按钮")
         print("Script: 等待倒计时结束")
-        wait_image_appear(f'{base_path}time59.png')
+        wait_image_appear(f'{base_path}time59.png', timeout=6)
         print('Script: 执行准备工作')
         click(f'{base_path}_1_2.png')
-        click(f'{base_path}_1_3.png', timesleep=1)
-        click(f'{base_path}_1_1.png')
+        click(f'{base_path}_1_3.png')
+        click(f'{base_path}_1_1.png', timesleep=1)
         print("Script: 制作第一个订单")
         click(f'{base_path}_2_2.png')
         click(f'{base_path}_3_2.png')
         print("Script: 完成第一个订单")
-        wait_image_appear(f'{base_path}time50.png', confidence=0.9)
+        wait_image_appear(f'{base_path}time52.png', timeout=6)
         print("Script: 制作第二个订单")
         click(f'{base_path}_1_4.png')
         click(f'{base_path}_3_3.png')
         print("Script: 完成第二个订单")
-        wait_image_appear(f'{base_path}time43.png', confidence=0.9)
+        wait_image_appear(f'{base_path}time43.png', timeout=6)
         print("Script: 制作第三个订单")
         click(f'{base_path}_2_1.png')
         click(f'{base_path}_3_1.png')

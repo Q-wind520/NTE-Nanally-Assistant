@@ -16,7 +16,7 @@ WINDOW_BORDER_TOP = 37
 WINDOW_BORDER_BOTTOM = 10
 
 TARGET_ASPECT_RATIO = 16.0 / 9.0    # 16:9 宽高比
-TARGET_HEIGHT = 1080
+TARGET_HEIGHT = 720
 ASPECT_RATIO_TOLERANCE = 0.05        # 宽高比容差
 
 # ==================== 视觉识别 ====================

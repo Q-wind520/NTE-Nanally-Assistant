@@ -5,7 +5,7 @@
 - 通过进程名获取窗口句柄
 - 获取窗口位置和尺寸信息
 - 激活游戏窗口
-- 等待窗口调整为 1080p 分辨率
+- 等待窗口调整为 720p 分辨率
 """
 
 from __future__ import annotations
@@ -45,7 +45,7 @@ class WindowInfo:
         bottom: 窗口客户区右下角 Y 坐标
         width: 窗口客户区宽度
         height: 窗口客户区高度
-        scale: 缩放比例（相对于 1080p）
+        scale: 缩放比例（相对于 720p）
     """
     left: int
     top: int
@@ -196,15 +196,15 @@ def activate_window(hwnd: Optional[int] = None) -> None:
         raise
 
 
-def wait_for_1080p_resolution(
+def wait_for_target_resolution(
     timeout: float = 300,
     check_interval: float = 2,
     process_name: str = DEFAULT_PROCESS_NAME
 ) -> WindowInfo:
     """
-    等待游戏窗口调整为 1920×1080 分辨率
+    等待游戏窗口调整为 1280×720 分辨率
 
-    循环检测窗口分辨率，直到满足 1080p 或超时。
+    循环检测窗口分辨率，直到满足 720p 或超时。
 
     Args:
         timeout: 超时时间（秒）
@@ -212,10 +212,10 @@ def wait_for_1080p_resolution(
         process_name: 进程名
 
     Returns:
-        符合 1080p 要求的窗口信息
+        符合 720p 要求的窗口信息
 
     Raises:
-        WindowResolutionTimeoutError: 超时仍未检测到 1080p 分辨率
+        WindowResolutionTimeoutError: 超时仍未检测到 720p 分辨率
     """
     start_time = time.time()
 
@@ -228,19 +228,19 @@ def wait_for_1080p_resolution(
             window_info = None
 
         if window_info is not None:
-            is_1080p = (
+            is_target = (
                 window_info.height == TARGET_HEIGHT and
                 abs(window_info.width / window_info.height - TARGET_ASPECT_RATIO) < ASPECT_RATIO_TOLERANCE
             )
 
-            if is_1080p:
-                logger.info("检测到 1080p 窗口分辨率")
+            if is_target:
+                logger.info("检测到 720p 窗口分辨率")
                 return window_info
 
         elapsed = time.time() - start_time
 
         if elapsed < 5:
-            logger.warning("不能执行脚本，请将游戏窗口化为 1920×1080 分辨率")
+            logger.warning("不能执行脚本，请将游戏窗口化为 1280×720 分辨率")
             logger.info("正在等待你为其窗口化...")
             time.sleep(5)
         elif elapsed < timeout:
