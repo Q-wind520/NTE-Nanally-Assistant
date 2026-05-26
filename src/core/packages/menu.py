@@ -110,6 +110,7 @@ def _register_builtin_scripts() -> None:
     """注册内置脚本（延迟导入避免循环依赖）"""
     from core.scripts.DianZhangTeGong._1_1 import script_DianZhangTeGong_1_1
     from core.scripts.DianZhangTeGong._TuiGuanQia import script_DianZhangTeGong_TuiGuanQia
+    from core.scripts.DiaoYu._DY import script_DiaoYu
 
     register_script("1", ScriptInfo(
         name="店长特供_1-1",
@@ -125,4 +126,10 @@ def _register_builtin_scripts() -> None:
         need_times_param=True
     ))
 
+    register_script("3", ScriptInfo(
+        name="海上钓客", 
+        description="半自动钓鱼", 
+        runner=script_DiaoYu, 
+        need_times_param=True
+    ))
 
