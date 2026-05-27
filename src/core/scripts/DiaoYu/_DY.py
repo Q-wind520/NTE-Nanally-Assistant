@@ -14,14 +14,31 @@ def script_DiaoYu(times):
         if wait_image_appear(f'{base_path}DiaoYu.png') != None: break
     pdi.press('f')
     click(f"{base_path}start.png")
+    if wait_image_appear(f'{base_path}lacking.png', timeout=1):
+            print("Script: 鱼饵已耗尽")
+            pdi.press('esc')
+            return -1
     time.sleep(2)
     for i in range(times):
         print(f"Script: 正在执行脚本: 自动钓鱼,第{i+1}次")
         time.sleep(1)
         pdi.press('f')
-        wait_image_appear(f'{base_path}upfish.png')
+        if wait_image_appear(f'{base_path}lacking.png', timeout=1):
+            print("Script: 鱼饵已耗尽")
+            break
+
+        # 上鱼
+        try:
+            wait_image_appear(f'{base_path}upfish.png', timeout=20, confidence=0.7)
+        except:
+            print("Script: 鱼儿逃走了")
+            i -= 1
+            continue
         pdi.press('f')
         time.sleep(2)
-        wait_image_appear(f'{base_path}close.png')
+        wait_image_appear(f'{base_path}close.png', timeout=20, confidence=0.7)
         time.sleep(0.5)
         pdi.click()
+    pdi.press('esc')
+    time.sleep(1)
+    pdi.press('esc')
