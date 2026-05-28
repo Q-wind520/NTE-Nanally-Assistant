@@ -33,7 +33,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=['docs\\img\\icon.ico'],
-    manifest='NTENA.manifest',
+    uac_admin=True,
 )
 coll = COLLECT(
     exe,

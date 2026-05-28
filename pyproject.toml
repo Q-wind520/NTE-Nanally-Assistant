@@ -8,9 +8,10 @@ version = "0.5.0"
 authors = [
     { name="Q-wind520", email="mg_fire1030@163.com" },
 ]
-description = "NTE Nanally Assistant 为你轻松处理异环中的重复性劳动，拿到真正的劳动所得！"
+description = "NTE Nanally Assistant 为你轻松拿到“劳动所得”！"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
+license = {text = "GPLv3"}
 
 dependencies = [
     "mss==10.2.0",
