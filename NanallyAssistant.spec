@@ -5,7 +5,7 @@ a = Analysis(
     ['src\\main.py'],
     pathex=[],
     binaries=[],
-    datas=[('assets', 'assets'), ('docs', 'docs')],
+    datas=[('assets', '..\\assets'), ('docs\\img', '..\\img')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -33,7 +33,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=['docs\\img\\icon.ico'],
-    manifest='NTENA.manifest',
+    uac_admin=True,
 )
 coll = COLLECT(
     exe,
