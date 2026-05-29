@@ -1,0 +1,156 @@
+[meta]
+name = "店长特供_1-1"
+description = "执行店长特供1-1关卡脚本"
+
+[setup]
+base_path = "./assets/DZTG_1-1/"
+
+# ===== 进入关卡 =====
+
+[[enter]]
+type = "wait"
+image = "join.png"
+
+[[enter]]
+type = "press"
+key = "f"
+
+[[enter]]
+type = "wait"
+image = "start.png"
+
+# ===== 循环体 =====
+
+[[loop]]
+type = "move_to"
+x = 100
+y = 200
+
+[[loop]]
+type = "scroll_until"
+image = "level_null.png"
+confidence = 0.95
+scroll = 1000
+
+[[loop]]
+type = "click"
+image = "level_null.png"
+confidence = 0.9
+
+[[loop]]
+type = "click"
+image = "start.png"
+
+[[loop]]
+type = "print"
+text = "等待倒计时结束"
+
+[[loop]]
+type = "wait"
+image = "time59.png"
+timeout = 6
+
+[[loop]]
+type = "print"
+text = "执行准备工作"
+
+[[loop]]
+type = "click"
+image = "_1_2.png"
+
+[[loop]]
+type = "click"
+image = "_1_3.png"
+
+[[loop]]
+type = "click"
+image = "_1_1.png"
+timesleep = 1.0
+
+[[loop]]
+type = "print"
+text = "制作第一个订单"
+
+[[loop]]
+type = "click"
+image = "_2_2.png"
+
+[[loop]]
+type = "click"
+image = "_3_2.png"
+
+[[loop]]
+type = "print"
+text = "完成第一个订单"
+
+[[loop]]
+type = "wait"
+image = "time52.png"
+timeout = 6
+
+[[loop]]
+type = "print"
+text = "制作第二个订单"
+
+[[loop]]
+type = "click"
+image = "_1_4.png"
+
+[[loop]]
+type = "click"
+image = "_3_3.png"
+
+[[loop]]
+type = "print"
+text = "完成第二个订单"
+
+[[loop]]
+type = "wait"
+image = "time43.png"
+timeout = 6
+
+[[loop]]
+type = "print"
+text = "制作第三个订单"
+
+[[loop]]
+type = "click"
+image = "_2_1.png"
+
+[[loop]]
+type = "click"
+image = "_3_1.png"
+
+[[loop]]
+type = "print"
+text = "完成第三个订单"
+
+[[loop]]
+type = "wait"
+image = "completed.png"
+
+[[loop]]
+type = "print"
+text = "退出并领取奖励"
+
+[[loop]]
+type = "press"
+key = "esc"
+
+[[loop]]
+type = "click"
+image = "reward.png"
+
+# ===== 退出 =====
+
+[[exit]]
+type = "wait"
+image = "start.png"
+
+[[exit]]
+type = "sleep"
+duration = 1.0
+
+[[exit]]
+type = "press"
+key = "esc"

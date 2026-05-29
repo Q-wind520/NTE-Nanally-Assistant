@@ -9,7 +9,9 @@
 from __future__ import annotations
 
 import logging
+import tomllib
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable, Optional
 
 logger = logging.getLogger(__name__)
@@ -108,16 +110,8 @@ def register_script(key: str, script: ScriptInfo) -> None:
 
 def _register_builtin_scripts() -> None:
     """注册内置脚本（延迟导入避免循环依赖）"""
-    from core.scripts.DianZhangTeGong._1_1 import script_DianZhangTeGong_1_1
     from core.scripts.DianZhangTeGong._TuiGuanQia import script_DianZhangTeGong_TuiGuanQia
     from core.scripts.DiaoYu._DY import script_DiaoYu
-
-    register_script("1", ScriptInfo(
-        name="店长特供_1-1",
-        description="执行店长特供1-1关卡脚本",
-        runner=script_DianZhangTeGong_1_1,
-        need_times_param=True
-    ))
 
     register_script("2", ScriptInfo(
         name="店长特供_推关卡",
@@ -127,9 +121,46 @@ def _register_builtin_scripts() -> None:
     ))
 
     register_script("3", ScriptInfo(
-        name="海上钓客", 
-        description="半自动钓鱼", 
-        runner=script_DiaoYu, 
+        name="海上钓客",
+        description="半自动钓鱼",
+        runner=script_DiaoYu,
         need_times_param=True
     ))
+
+    _register_external_scripts()
+
+
+def _register_external_scripts() -> None:
+    """扫描 src/scripts/ 下的 .toml 外置脚本并注册。"""
+    from core.toml_runner import run_toml_script
+
+    scripts_dir = Path(__file__).parent.parent.parent / "scripts"
+    if not scripts_dir.is_dir():
+        return
+
+    for toml_file in scripts_dir.glob("*.toml"):
+        try:
+            with open(toml_file, "rb") as f:
+                data = tomllib.load(f)
+            meta = data.get("meta", {})
+            name = meta.get("name", toml_file.stem)
+            desc = meta.get("description", "")
+
+            toml_path = str(toml_file.resolve())
+            key = toml_file.stem
+
+            def make_runner(path: str):
+                def runner(times: int) -> None:
+                    run_toml_script(path, times)
+                return runner
+
+            register_script(key, ScriptInfo(
+                name=name,
+                description=desc,
+                runner=make_runner(toml_path),
+                need_times_param=True,
+            ))
+            logger.info("已注册外置脚本: %s (%s)", name, toml_path)
+        except Exception:
+            logger.exception("无法加载外置脚本: %s", toml_file)
 
