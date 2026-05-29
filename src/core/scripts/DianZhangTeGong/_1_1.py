@@ -9,20 +9,19 @@ def script_DianZhangTeGong_1_1(times):
     activate_window()
     window_info = get_window(get_hwnd())
     base_path = './assets/DZTG_1-1/'
+
+    # 进入
+    wait_image_appear(f'{base_path}join.png')
+    pdi.press('f')
+    wait_image_appear(f'{base_path}start.png')
+
+    # 循环
     for i in range(times):
         print(f"Script: 正在执行脚本: 店长特供_1-1,第{i+1}次")
-
-        wait_image_appear(f'{base_path}join.png')
-        pdi.press('f')
-
-        if i == 0:
-            try:
-                wait_image_appear(f'{base_path}level.png')
-            except:
-                pdi.moveTo(window_info.left + 100, window_info.top + 200)
-                scroll(1000)
-                time.sleep(0.2)
-                click(f'{base_path}level_null.png')
+        pdi.moveTo(window_info.left + 100, window_info.top + 200)
+        while wait_image_appear(f'{base_path}level_null.png', confidence=0.95, timeout=0.1) == None:
+            scroll(1000)
+        click(f'{base_path}level_null.png', confidence=0.9)
 
         click(f'{base_path}start.png')
         print("Script: 等待倒计时结束")
@@ -47,5 +46,8 @@ def script_DianZhangTeGong_1_1(times):
         print("Script: 完成第三个订单")
         wait_image_appear(f'{base_path}completed.png')
         print("Script: 退出并领取奖励")
-        click(f'{base_path}exit.png')
+        pdi.press('esc')
         click(f'{base_path}reward.png')
+    wait_image_appear(f'{base_path}start.png')
+    time.sleep(1)
+    pdi.press('esc')
