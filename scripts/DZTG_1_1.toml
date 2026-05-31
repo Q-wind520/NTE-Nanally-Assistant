@@ -35,7 +35,7 @@ interval = 0.05
 [[loop]]
 type = "click"
 image = "level_null.png"
-confidence = 0.7
+confidence = 0.6
 
 [[loop]]
 type = "click"
@@ -84,9 +84,8 @@ type = "print"
 text = "完成第一个订单"
 
 [[loop]]
-type = "wait"
-image = "time52.png"
-timeout = 6
+type = "sleep"
+duration = 5.0
 
 [[loop]]
 type = "print"
@@ -105,9 +104,8 @@ type = "print"
 text = "完成第二个订单"
 
 [[loop]]
-type = "wait"
-image = "time43.png"
-timeout = 6
+type = "sleep"
+duration = 6.0
 
 [[loop]]
 type = "print"

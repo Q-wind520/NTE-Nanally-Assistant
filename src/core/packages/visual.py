@@ -83,7 +83,9 @@ class MatchResult:
 @lru_cache(maxsize=32)
 def _load_image(image_path: str) -> np.ndarray:
     """加载并缓存图片。已通过 lru_cache 自动缓存。"""
-    image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+    # cv2.imread 不支持 Windows 非 ASCII 路径，用 imdecode 替代
+    data = np.fromfile(image_path, dtype=np.uint8)
+    image = cv2.imdecode(data, cv2.IMREAD_COLOR)
     if image is None:
         raise FileNotFoundError(f"图片未找到或无法读取: {image_path}")
     logger.debug(f"已加载图片: {image_path}, 尺寸: {image.shape[1]}x{image.shape[0]}")
