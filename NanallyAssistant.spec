@@ -9,6 +9,7 @@ a = Analysis(
         ('assets', 'assets'),
         ('docs\\img', 'docs\\img'),
         ('scripts', 'scripts'),
+        ('pyproject.toml', '.')
     ],
     hiddenimports=[],
     hookspath=[],

@@ -12,6 +12,7 @@ import pydirectinput as pdi
 from core.packages.constants import get_asset_path as gap
 from core.packages.visual import click, wait_image_appear, wait_image_disappear, scroll
 from core.packages.window import activate_window, get_hwnd, get_window, wait_for_target_resolution
+from core.scripts._base import get_builtin, BuiltinContext
 
 
 def run_toml_script(toml_path: str, times: int) -> None:
@@ -172,5 +173,18 @@ def _execute_steps(
                 wait_image_appear(img, timeout=0.1, confidence=confidence) is None
             ):
                 time.sleep(0.5)
+
+        elif action == "call":
+            name = step["name"]
+            func = get_builtin(name)
+            if func is None:
+                print(f"[WARN] 未知内置脚本: {name}")
+                continue
+            ctx = BuiltinContext(
+                resolve=resolve,
+                params=step.get("params", {}),
+                window_info=window_info,
+            )
+            func(ctx)
 
     return None

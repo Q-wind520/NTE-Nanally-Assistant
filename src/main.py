@@ -1,6 +1,7 @@
 import ctypes
 import logging
 import sys
+from datetime import datetime
 from pathlib import Path
 
 # 确保 src/ 在 sys.path 中（直接运行时需要）
@@ -18,9 +19,24 @@ from gui.log_handler import QtLogHandler, QtStreamRedirector, get_log_signal
 from gui.main_window import MainWindow
 
 
+def _setup_file_logging() -> None:
+    log_dir = Path.cwd() / "log"
+    log_dir.mkdir(exist_ok=True)
+    filename = datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".log"
+    file_handler = logging.FileHandler(log_dir / filename, encoding="utf-8")
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    ))
+    logging.getLogger().addHandler(file_handler)
+
+
 def main() -> None:
+    # 配置文件日志（在 GUI 启动前，确保崩溃也能留存）
+    _setup_file_logging()
+
     # 配置根日志器
-    logging.getLogger().setLevel(logging.INFO)
+    logging.getLogger().setLevel(logging.DEBUG)
 
     app = QApplication(sys.argv)
     app.setApplicationName("NTE Nanally Assistant")
@@ -36,7 +52,6 @@ def main() -> None:
     )
     sys.stdout = stdout_redirector
 
-    # 日志初始化信息
     logging.getLogger(__name__).info("GUI 启动完成")
 
     window = MainWindow()

@@ -5,6 +5,7 @@
 """
 
 import sys
+import tomllib
 from pathlib import Path
 
 
@@ -12,6 +13,14 @@ def get_asset_path(*parts: str) -> Path:
     """获取资源路径，兼容 PyInstaller 打包和开发环境。"""
     base = Path(getattr(sys, '_MEIPASS', '.')) if getattr(sys, 'frozen', False) else Path.cwd()
     return base.joinpath(*parts)
+
+
+def get_version() -> str:
+    """从 pyproject.toml 读取版本号。"""
+    toml_path = get_asset_path('pyproject.toml')
+    with open(toml_path, 'rb') as f:
+        data = tomllib.load(f)
+    return data['project']['version']
 
 # ==================== 进程检测 ====================
 DEFAULT_PROCESS_NAME = "HTGame.exe"
@@ -36,11 +45,8 @@ DEFAULT_SCREEN_INDEX = 0             # MSS 屏幕索引
 DEFAULT_CLICK_OFFSET = (0, 0)        # 点击偏移量
 
 # ==================== 退出/UI ====================
-DEFAULT_WIDTH = 75
 DEFAULT_TITLE = "NTE Nanally Assistant"
-DEFAULT_VERSION = "0.4.0"
 DEFAULT_AUTHOR = "Q-wind520"
-DEFAULT_MESSAGE = "See You Next Time!"
-DEFAULT_DELAY = 1.0
-DEFAULT_BORDER_CHAR = "="
-DEFAULT_SIDE_CHAR = "|"
+GITHUB_AUTHOR_URL = "https://github.com/Q-wind520"
+GITHUB_REPO_URL = "https://github.com/Q-wind520/NTE-Nanally-Assistant"
+GITHUB_ISSUES_URL = "https://github.com/Q-wind520/NTE-Nanally-Assistant/issues"

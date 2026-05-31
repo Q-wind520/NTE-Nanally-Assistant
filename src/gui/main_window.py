@@ -1,20 +1,20 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QAction, QFont, QIcon
+from PySide6.QtGui import QFont, QIcon
 from PySide6.QtWidgets import (
     QApplication,
+    QButtonGroup,
     QComboBox,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
     QMainWindow,
     QMenu,
     QPushButton,
     QSpinBox,
+    QStackedWidget,
     QStatusBar,
     QSystemTrayIcon,
     QTextEdit,
@@ -24,9 +24,10 @@ from PySide6.QtWidgets import (
 )
 
 from core.packages.constants import (
-    DEFAULT_PROCESS_NAME, DEFAULT_TITLE, DEFAULT_VERSION,
+    DEFAULT_PROCESS_NAME, DEFAULT_TITLE, DEFAULT_AUTHOR,
     TARGET_ASPECT_RATIO, ASPECT_RATIO_TOLERANCE,
-    get_asset_path as gap,
+    GITHUB_AUTHOR_URL, GITHUB_REPO_URL, GITHUB_ISSUES_URL,
+    get_asset_path as gap, get_version,
 )
 from core.packages.process import is_process_running
 from core.packages.window import get_hwnd, get_window, WindowNotFoundError, WindowInvalidError
@@ -36,6 +37,40 @@ from gui.script_worker import ScriptWorker
 from gui.log_handler import get_log_signal
 
 logger = logging.getLogger(__name__)
+
+SIDEBAR_STYLE = """
+QPushButton {
+    background: #2b2b2b;
+    color: #cccccc;
+    border: none;
+    border-left: 3px solid transparent;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 14px;
+}
+QPushButton:hover {
+    background: #3c3c3c;
+    color: #ffffff;
+}
+QPushButton:checked {
+    background: #353535;
+    color: #ffffff;
+    border-left: 3px solid #6b9fed;
+}
+"""
+
+
+def _is_dark_mode() -> bool:
+    cs = QApplication.styleHints().colorScheme()
+    return cs == Qt.ColorScheme.Dark
+
+
+def _card_bg() -> str:
+    return "#3c3c3c" if _is_dark_mode() else "#f5f5f5"
+
+
+def _text_color() -> str:
+    return "#e0e0e0" if _is_dark_mode() else "#333333"
 
 
 def _icon_path() -> str:
@@ -51,8 +86,8 @@ def _icon_path() -> str:
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle(f"{DEFAULT_TITLE} v{DEFAULT_VERSION}")
-        self.resize(960, 540)
+        self.setWindowTitle(f"{DEFAULT_TITLE} {get_version()}")
+        self.resize(960, 580)
 
         icon = _icon_path()
         if icon:
@@ -73,22 +108,92 @@ class MainWindow(QMainWindow):
     def _build_ui(self) -> None:
         central = QWidget()
         self.setCentralWidget(central)
-        root = QVBoxLayout(central)
-        root.setSpacing(8)
+        root = QHBoxLayout(central)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
 
-        # --- 游戏状态 ---
-        status_group = QGroupBox("游戏状态")
-        status_layout = QHBoxLayout(status_group)
+        # --- 侧边栏 ---
+        sidebar = QWidget()
+        sidebar.setFixedWidth(160)
+        sidebar.setStyleSheet("background: #2b2b2b;")
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(0, 8, 0, 8)
+        sidebar_layout.setSpacing(2)
+
+        self._nav_group = QButtonGroup(self)
+        self._nav_group.setExclusive(True)
+
+        nav_home = QPushButton("  主页")
+        nav_home.setCheckable(True)
+        nav_home.setChecked(True)
+        nav_home.setStyleSheet(SIDEBAR_STYLE)
+        nav_home.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        nav_log = QPushButton("  日志")
+        nav_log.setCheckable(True)
+        nav_log.setStyleSheet(SIDEBAR_STYLE)
+        nav_log.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        nav_about = QPushButton("  关于")
+        nav_about.setCheckable(True)
+        nav_about.setStyleSheet(SIDEBAR_STYLE)
+        nav_about.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        self._nav_group.addButton(nav_home, 0)
+        self._nav_group.addButton(nav_log, 1)
+        self._nav_group.addButton(nav_about, 2)
+
+        sidebar_layout.addWidget(nav_home)
+        sidebar_layout.addWidget(nav_log)
+        sidebar_layout.addWidget(nav_about)
+        sidebar_layout.addStretch()
+
+        root.addWidget(sidebar)
+
+        # --- 页面容器 ---
+        self._pages = QStackedWidget()
+        self._pages.addWidget(self._build_home_page())
+        self._pages.addWidget(self._build_log_page())
+        self._pages.addWidget(self._build_about_page())
+
+        self._nav_group.idClicked.connect(self._pages.setCurrentIndex)
+
+        root.addWidget(self._pages, 1)
+
+        # --- 状态栏 ---
+        self._status_bar = QStatusBar()
+        self.setStatusBar(self._status_bar)
+        self._status_bar.showMessage("就绪")
+
+    def _build_home_page(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setSpacing(12)
+        layout.setContentsMargins(20, 16, 20, 16)
+
+        # 游戏状态
+        title_label = QLabel("游戏状态")
+        title_label.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {_text_color()};")
+        layout.addWidget(title_label)
+
+        status_widget = QWidget()
+        status_widget.setStyleSheet(f"background: {_card_bg()}; border-radius: 6px; padding: 12px;")
+        status_layout = QHBoxLayout(status_widget)
         self._process_label = QLabel("等待检测...")
         self._resolution_label = QLabel("等待检测...")
         status_layout.addWidget(self._process_label)
         status_layout.addWidget(self._resolution_label)
         status_layout.addStretch()
-        root.addWidget(status_group)
+        layout.addWidget(status_widget)
 
-        # --- 脚本控制 ---
-        control_group = QGroupBox("脚本控制")
-        control_layout = QHBoxLayout(control_group)
+        # 脚本控制
+        title_label2 = QLabel("脚本控制")
+        title_label2.setStyleSheet("font-size: 15px; font-weight: bold; color: #333;")
+        layout.addWidget(title_label2)
+
+        control_widget = QWidget()
+        control_widget.setStyleSheet(f"background: {_card_bg()}; border-radius: 6px; padding: 12px;")
+        control_layout = QHBoxLayout(control_widget)
 
         control_layout.addWidget(QLabel("脚本:"))
         self._script_combo = QComboBox()
@@ -104,32 +209,105 @@ class MainWindow(QMainWindow):
         self._start_btn = QPushButton("▶ 开始执行")
         self._stop_btn = QPushButton("■ 停止")
         self._stop_btn.setEnabled(False)
-        self._clear_btn = QPushButton("清空日志")
 
         control_layout.addWidget(self._start_btn)
         control_layout.addWidget(self._stop_btn)
-        control_layout.addWidget(self._clear_btn)
         control_layout.addStretch()
-        root.addWidget(control_group)
+        layout.addWidget(control_widget)
 
-        # --- 日志输出 ---
+        layout.addStretch()
+        return page
+
+    def _build_log_page(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setSpacing(8)
+        layout.setContentsMargins(20, 16, 20, 16)
+
+        header = QHBoxLayout()
+        title_label = QLabel("实时日志")
+        title_label.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {_text_color()};")
+        header.addWidget(title_label)
+        header.addStretch()
+
+        self._clear_btn = QPushButton("清空日志")
+        header.addWidget(self._clear_btn)
+        layout.addLayout(header)
+
         self._log_output = QTextEdit()
         self._log_output.setReadOnly(True)
         self._log_output.setFont(QFont("Consolas", 10))
         self._log_output.document().setMaximumBlockCount(5000)
-        root.addWidget(self._log_output)
+        layout.addWidget(self._log_output)
 
-        # --- 菜单栏 ---
-        menubar = self.menuBar()
-        file_menu = menubar.addMenu("文件(&F)")
-        exit_action = QAction("退出(&X)", self)
-        exit_action.triggered.connect(self._quit_app)
-        file_menu.addAction(exit_action)
+        return page
 
-        # --- 状态栏 ---
-        self._status_bar = QStatusBar()
-        self.setStatusBar(self._status_bar)
-        self._status_bar.showMessage("就绪")
+    def _build_about_page(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setSpacing(16)
+        layout.setContentsMargins(20, 16, 20, 16)
+
+        title_label = QLabel("关于")
+        title_label.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {_text_color()};")
+        layout.addWidget(title_label)
+
+        info_widget = QWidget()
+        info_widget.setStyleSheet(f"background: {_card_bg()}; border-radius: 6px; padding: 16px;")
+        info_layout = QVBoxLayout(info_widget)
+        info_layout.setSpacing(12)
+
+        # 版本
+        ver_label = QLabel(f"版本: {get_version()}")
+        ver_label.setStyleSheet("font-size: 13px;")
+        info_layout.addWidget(ver_label)
+
+        # 作者
+        author_label = QLabel(
+            f'作者: <a href="{GITHUB_AUTHOR_URL}" style="color: #6b9fed;">{DEFAULT_AUTHOR}</a>'
+        )
+        author_label.setOpenExternalLinks(True)
+        author_label.setStyleSheet("font-size: 13px;")
+        info_layout.addWidget(author_label)
+
+        # 仓库
+        repo_label = QLabel(
+            f'仓库: <a href="{GITHUB_REPO_URL}" style="color: #6b9fed;">{GITHUB_REPO_URL}</a>'
+        )
+        repo_label.setOpenExternalLinks(True)
+        repo_label.setStyleSheet("font-size: 13px;")
+        info_layout.addWidget(repo_label)
+
+        # Issues
+        issues_label = QLabel(
+            f'反馈: <a href="{GITHUB_ISSUES_URL}" style="color: #6b9fed;">提交 Issue</a>'
+        )
+        issues_label.setOpenExternalLinks(True)
+        issues_label.setStyleSheet("font-size: 13px;")
+        info_layout.addWidget(issues_label)
+
+        info_layout.addSpacing(8)
+
+        # 开源协议
+        license_label = QLabel(
+            '开源协议: <a href="https://www.gnu.org/licenses/gpl-3.0.html" '
+            'style="color: #6b9fed;">GPLv3</a>'
+        )
+        license_label.setOpenExternalLinks(True)
+        license_label.setStyleSheet("font-size: 13px;")
+        info_layout.addWidget(license_label)
+
+        license_desc = QLabel(
+            "本软件为自由软件，您可以自由使用、修改和重新发布，"
+            "但必须保留相同的许可证并公开源代码。"
+        )
+        license_desc.setWordWrap(True)
+        license_desc.setStyleSheet(f"font-size: 12px; color: {_text_color()}; opacity: 0.7;")
+        info_layout.addWidget(license_desc)
+
+        layout.addWidget(info_widget)
+        layout.addStretch()
+        return page
 
     # ------------------------------------------------------------------
     # 脚本列表
@@ -292,7 +470,7 @@ class MainWindow(QMainWindow):
             QApplication.style().StandardPixmap.SP_ComputerIcon
         )
         self._tray = QSystemTrayIcon(icon, self)
-        self._tray.setToolTip(f"{DEFAULT_TITLE} v{DEFAULT_VERSION}")
+        self._tray.setToolTip(f"{DEFAULT_TITLE} v{get_version()}")
 
         menu = QMenu()
         show_action = menu.addAction("显示/隐藏窗口")
