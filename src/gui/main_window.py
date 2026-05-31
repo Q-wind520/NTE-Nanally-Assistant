@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer
@@ -27,10 +26,11 @@ from PySide6.QtWidgets import (
 from core.packages.constants import (
     DEFAULT_PROCESS_NAME, DEFAULT_TITLE, DEFAULT_VERSION,
     TARGET_ASPECT_RATIO, ASPECT_RATIO_TOLERANCE,
+    get_asset_path as gap,
 )
 from core.packages.process import is_process_running
 from core.packages.window import get_hwnd, get_window, WindowNotFoundError, WindowInvalidError
-from core.packages.menu import _register_builtin_scripts, get_registry
+from core.packages.menu import register_all_scripts, get_registry
 
 from gui.script_worker import ScriptWorker
 from gui.log_handler import get_log_signal
@@ -39,13 +39,12 @@ logger = logging.getLogger(__name__)
 
 
 def _icon_path() -> str:
-    candidates = [
-        "docs/img/icon.ico",
-        "docs/img/icon.png",
-    ]
-    for p in candidates:
-        if os.path.exists(p):
-            return p
+    icon = gap('docs', 'img', 'icon.ico')
+    if icon.exists():
+        return str(icon)
+    png = gap('docs', 'img', 'icon.png')
+    if png.exists():
+        return str(png)
     return ""
 
 
@@ -137,7 +136,7 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def _populate_scripts(self) -> None:
-        _register_builtin_scripts()
+        register_all_scripts()
         all_scripts = get_registry().get_all()
         self._script_combo.clear()
         for key, info in all_scripts.items():

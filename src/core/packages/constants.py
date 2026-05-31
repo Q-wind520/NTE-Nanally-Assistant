@@ -4,6 +4,15 @@
 所有可配置的常量集中在此模块，方便统一管理和修改。
 """
 
+import sys
+from pathlib import Path
+
+
+def get_asset_path(*parts: str) -> Path:
+    """获取资源路径，兼容 PyInstaller 打包和开发环境。"""
+    base = Path(getattr(sys, '_MEIPASS', '.')) if getattr(sys, 'frozen', False) else Path.cwd()
+    return base.joinpath(*parts)
+
 # ==================== 进程检测 ====================
 DEFAULT_PROCESS_NAME = "HTGame.exe"
 DEFAULT_PROCESS_TIMEOUT = 300        # 等待进程启动超时（秒）

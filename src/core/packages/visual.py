@@ -261,29 +261,29 @@ class VisualLocator:
     ) -> Optional[MatchResult]:
         """
         在屏幕上查找单个模板图片
-        
+
         Args:
             template_path: 模板图片路径
             confidence: 匹配置信度阈值，None 使用默认值
             region: 搜索区域，None 则使用窗口区域
-            
+
         Returns:
             匹配结果，未找到返回 None
         """
         if confidence is None:
             confidence = self.confidence
-        
+
         # 加载模板
         template = _load_image(template_path)
         tpl_h, tpl_w = template.shape[:2]
-        
+
         # 捕获屏幕
         screenshot = self.capture_screen(region)
-        
+
         # 模板匹配
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
         _, max_val, _, max_loc = cv2.minMaxLoc(result)
-        
+
         if max_val < confidence:
             return None
 
@@ -301,29 +301,29 @@ class VisualLocator:
     ) -> List[MatchResult]:
         """
         在屏幕上查找所有匹配的模板图片
-        
+
         Args:
             template_path: 模板图片路径
             confidence: 匹配置信度阈值
             region: 搜索区域
             max_results: 最大返回结果数
-            
+
         Returns:
             匹配结果列表
         """
         if confidence is None:
             confidence = self.confidence
-        
+
         template = _load_image(template_path)
         tpl_h, tpl_w = template.shape[:2]
         screenshot = self.capture_screen(region)
-        
+
         # 模板匹配
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
-        
+
         # 使用阈值获取所有匹配位置
         locations = np.where(result >= confidence)
-        
+
         matches: List[MatchResult] = []
 
         for pt in zip(*locations[::-1]):
@@ -337,10 +337,10 @@ class VisualLocator:
             )
 
             matches.append(MatchResult(left, top, width, height, conf))
-        
+
         # 非极大值抑制，去除重叠框
         matches = self._nms(matches, threshold=0.3)
-        
+
         return matches
     
     @staticmethod

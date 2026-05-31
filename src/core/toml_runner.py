@@ -9,8 +9,9 @@ from typing import Any
 
 import pydirectinput as pdi
 
+from core.packages.constants import get_asset_path as gap
 from core.packages.visual import click, wait_image_appear, wait_image_disappear, scroll
-from core.packages.window import activate_window, get_hwnd, get_window
+from core.packages.window import activate_window, get_hwnd, get_window, wait_for_target_resolution
 
 
 def run_toml_script(toml_path: str, times: int) -> None:
@@ -29,10 +30,14 @@ def run_toml_script(toml_path: str, times: int) -> None:
     loop_steps = data.get("loop", [])
     exit_steps = data.get("exit", [])
 
-    base_path = setup.get("base_path", ".")
+    raw_base = setup.get("base_path", ".")
+    base_path = str(gap(raw_base)) if not Path(raw_base).is_absolute() else raw_base
 
     if setup.get("activate_window", True):
         activate_window()
+
+    if setup.get("wait_for_resolution", False):
+        wait_for_target_resolution()
 
     window_info = get_window(get_hwnd())
 
@@ -46,6 +51,8 @@ def run_toml_script(toml_path: str, times: int) -> None:
         result = _execute_steps(loop_steps, resolve, window_info)
         if result == "break":
             break
+        elif result == "continue":
+            continue
 
     _execute_steps(exit_steps, resolve, window_info)
 
@@ -96,7 +103,13 @@ def _execute_steps(
             time.sleep(step.get("duration", 1.0))
 
         elif action == "scroll":
-            scroll(step.get("amount", 1000))
+            amount = step.get("amount", 1000)
+            repeat = step.get("repeat", 1)
+            interval = step.get("interval", 0.0)
+            for _ in range(repeat):
+                scroll(amount)
+                if interval > 0:
+                    time.sleep(interval)
 
         elif action == "scroll_until":
             img = resolve(step["image"])
@@ -142,5 +155,22 @@ def _execute_steps(
 
         elif action == "click_at":
             pdi.click()
+
+        elif action == "click_until":
+            target_img = resolve(step["target"])
+            click_img = resolve(step["image"])
+            confidence = step.get("confidence", 0.8)
+            while (
+                wait_image_appear(target_img, timeout=0.1, confidence=confidence) is None
+            ):
+                click(click_img, confidence=confidence)
+
+        elif action == "wait_forever":
+            img = resolve(step["image"])
+            confidence = step.get("confidence", 0.8)
+            while (
+                wait_image_appear(img, timeout=0.1, confidence=confidence) is None
+            ):
+                time.sleep(0.5)
 
     return None

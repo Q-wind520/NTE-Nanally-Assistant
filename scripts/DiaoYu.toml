@@ -1,0 +1,99 @@
+[meta]
+name = "海上钓客"
+description = "半自动钓鱼"
+
+[setup]
+base_path = "./assets/DY/"
+wait_for_resolution = true
+
+# ===== 等待钓鱼点 =====
+
+[[enter]]
+type = "print"
+text = "Script: 等待玩家站到钓鱼点"
+
+[[enter]]
+type = "wait_forever"
+image = "DiaoYu.png"
+
+[[enter]]
+type = "press"
+key = "f"
+
+[[enter]]
+type = "click"
+image = "start.png"
+
+[[enter]]
+type = "break_if"
+image = "lacking.png"
+timeout = 1.0
+message = "Script: 鱼饵已耗尽"
+
+[[enter]]
+type = "sleep"
+duration = 2.0
+
+# ===== 循环体 =====
+
+[[loop]]
+type = "sleep"
+duration = 1.0
+
+[[loop]]
+type = "press"
+key = "f"
+
+[[loop]]
+type = "break_if"
+image = "lacking.png"
+timeout = 1.0
+message = "Script: 鱼饵已耗尽"
+
+[[loop]]
+type = "wait"
+image = "upfish.png"
+timeout = 20.0
+confidence = 0.7
+
+[[loop]]
+type = "continue_if_not"
+image = "upfish.png"
+timeout = 0.1
+confidence = 0.7
+message = "Script: 鱼儿逃走了"
+
+[[loop]]
+type = "press"
+key = "f"
+
+[[loop]]
+type = "sleep"
+duration = 2.0
+
+[[loop]]
+type = "wait"
+image = "close.png"
+timeout = 20.0
+confidence = 0.7
+
+[[loop]]
+type = "sleep"
+duration = 0.5
+
+[[loop]]
+type = "click_at"
+
+# ===== 退出 =====
+
+[[exit]]
+type = "press"
+key = "esc"
+
+[[exit]]
+type = "sleep"
+duration = 1.0
+
+[[exit]]
+type = "press"
+key = "esc"

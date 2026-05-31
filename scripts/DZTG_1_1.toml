@@ -27,15 +27,15 @@ x = 100
 y = 200
 
 [[loop]]
-type = "scroll_until"
-image = "level_null.png"
-confidence = 0.95
-scroll = 1000
+type = "scroll"
+amount = 1000
+repeat = 16
+interval = 0.05
 
 [[loop]]
 type = "click"
 image = "level_null.png"
-confidence = 0.9
+confidence = 0.7
 
 [[loop]]
 type = "click"

@@ -11,7 +11,6 @@ from __future__ import annotations
 import logging
 import tomllib
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Callable, Optional
 
 logger = logging.getLogger(__name__)
@@ -106,35 +105,14 @@ def register_script(key: str, script: ScriptInfo) -> None:
     _registry.register(key, script)
 
 
-# ==================== 内置脚本注册 ====================
+# ==================== 脚本加载 ====================
 
-def _register_builtin_scripts() -> None:
-    """注册内置脚本（延迟导入避免循环依赖）"""
-    from core.scripts.DianZhangTeGong._TuiGuanQia import script_DianZhangTeGong_TuiGuanQia
-    from core.scripts.DiaoYu._DY import script_DiaoYu
-
-    register_script("2", ScriptInfo(
-        name="店长特供_推关卡",
-        description="使用娜娜莉和白藏的都市特技无脑推关卡",
-        runner=script_DianZhangTeGong_TuiGuanQia,
-        need_times_param=True
-    ))
-
-    register_script("3", ScriptInfo(
-        name="海上钓客",
-        description="半自动钓鱼",
-        runner=script_DiaoYu,
-        need_times_param=True
-    ))
-
-    _register_external_scripts()
-
-
-def _register_external_scripts() -> None:
-    """扫描 src/scripts/ 下的 .toml 外置脚本并注册。"""
+def register_all_scripts() -> None:
+    """扫描 scripts/ 下的 .toml 外置脚本并注册。"""
     from core.toml_runner import run_toml_script
+    from core.packages.constants import get_asset_path as gap
 
-    scripts_dir = Path(__file__).parent.parent.parent / "scripts"
+    scripts_dir = gap('scripts')
     if not scripts_dir.is_dir():
         return
 

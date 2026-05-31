@@ -1,0 +1,47 @@
+[meta]
+name = "店长特供_推关卡"
+description = "使用娜娜莉和白藏的都市特技无脑推关卡"
+
+[setup]
+base_path = "./assets/"
+
+# ===== 循环体 =====
+
+[[loop]]
+type = "sleep"
+duration = 2.0
+
+[[loop]]
+type = "press"
+key = "f"
+
+[[loop]]
+type = "print"
+text = "Script:已键入F"
+
+[[loop]]
+type = "sleep"
+duration = 2.0
+
+# next_level() — 选关卡（待实现）
+
+[[loop]]
+type = "click"
+image = "DZTG_1-1/start.png"
+
+[[loop]]
+type = "wait"
+image = "DZTG_1-1/time59.png"
+
+[[loop]]
+type = "click_until"
+target = "DZTG_1-1/completed.png"
+image = "DZTG_TuiGuanQia/hammer.png"
+
+[[loop]]
+type = "click"
+image = "DZTG_1-1/exit.png"
+
+[[loop]]
+type = "click"
+image = "DZTG_1-1/reward.png"
