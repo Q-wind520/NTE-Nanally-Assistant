@@ -209,9 +209,11 @@ class MainWindow(QMainWindow):
         self._start_btn = QPushButton("▶ 开始执行")
         self._stop_btn = QPushButton("■ 停止")
         self._stop_btn.setEnabled(False)
+        self._reload_btn = QPushButton("🔄 重载脚本")
 
         control_layout.addWidget(self._start_btn)
         control_layout.addWidget(self._stop_btn)
+        control_layout.addWidget(self._reload_btn)
         control_layout.addStretch()
         layout.addWidget(control_widget)
 
@@ -323,6 +325,13 @@ class MainWindow(QMainWindow):
             self._script_combo.addItem(f"{info.name}  -  {info.description}", info)
         self._on_script_changed(0)
 
+    def _reload_scripts(self) -> None:
+        """重新扫描并加载外置脚本"""
+        self._populate_scripts()
+        count = self._script_combo.count()
+        self._status_bar.showMessage(f"已重载 {count} 个脚本")
+        self._append_log(f"[INFO] 已重载 {count} 个外置脚本")
+
     # ------------------------------------------------------------------
     # 信号连接
     # ------------------------------------------------------------------
@@ -331,6 +340,7 @@ class MainWindow(QMainWindow):
         self._script_combo.currentIndexChanged.connect(self._on_script_changed)
         self._start_btn.clicked.connect(self._start_script)
         self._stop_btn.clicked.connect(self._stop_script)
+        self._reload_btn.clicked.connect(self._reload_scripts)
         self._clear_btn.clicked.connect(self._log_output.clear)
         get_log_signal().message.connect(self._append_log)
 
@@ -395,6 +405,7 @@ class MainWindow(QMainWindow):
         self._start_btn.setEnabled(False)
         self._stop_btn.setEnabled(True)
         self._script_combo.setEnabled(False)
+        self._reload_btn.setEnabled(False)
         self._status_bar.showMessage(f"运行中: {name}")
 
     def _on_worker_finished(self) -> None:
@@ -407,6 +418,7 @@ class MainWindow(QMainWindow):
         self._start_btn.setEnabled(True)
         self._stop_btn.setEnabled(False)
         self._script_combo.setEnabled(True)
+        self._reload_btn.setEnabled(True)
         self._status_bar.showMessage("就绪")
 
     # ------------------------------------------------------------------
