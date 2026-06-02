@@ -48,6 +48,7 @@ DEFAULT_CLICK_OFFSET = (0, 0)        # 点击偏移量
 MULTI_SCALE_MIN = 0.95              # 最小缩放比例
 MULTI_SCALE_MAX = 1.05              # 最大缩放比例
 MULTI_SCALE_STEPS = 3               # 单侧步数，总尺度数为 2*steps+1
+MULTI_SCALE_EARLY_EXIT = 0.95       # 多尺度匹配早期退出阈值，超过此置信度直接返回，不再尝试剩余尺度
 
 # ==================== 退出/UI ====================
 DEFAULT_TITLE = "NTE Nanally Assistant"

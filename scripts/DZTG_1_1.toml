@@ -7,6 +7,8 @@ base_path = "./assets/DZTG_1-1/"
 
 # ===== 进入关卡 =====
 
+# TODO - 识别到失败时退出、识别到都市活力不足时终止
+
 [[enter]]
 type = "wait"
 image = "join.png"
@@ -48,7 +50,8 @@ text = "等待倒计时结束"
 [[loop]]
 type = "wait"
 image = "time59.png"
-timeout = 6
+confidence = 0.7
+timeout = 10
 
 [[loop]]
 type = "print"
@@ -65,7 +68,7 @@ image = "_1_3.png"
 [[loop]]
 type = "click"
 image = "_1_1.png"
-timesleep = 1.0
+timesleep = 0.5
 
 [[loop]]
 type = "print"
@@ -85,7 +88,7 @@ text = "完成第一个订单"
 
 [[loop]]
 type = "sleep"
-duration = 5.0
+duration = 3.5
 
 [[loop]]
 type = "print"
@@ -105,7 +108,7 @@ text = "完成第二个订单"
 
 [[loop]]
 type = "sleep"
-duration = 6.0
+duration = 5.5
 
 [[loop]]
 type = "print"
@@ -126,6 +129,7 @@ text = "完成第三个订单"
 [[loop]]
 type = "wait"
 image = "completed.png"
+timeout = 3
 
 [[loop]]
 type = "print"
@@ -138,12 +142,20 @@ key = "esc"
 [[loop]]
 type = "click"
 image = "reward.png"
+timeout = 3
 
-# ===== 退出 =====
+[[loop]]
+type = "click"
+image = "exit.png"
+timeout = 1
 
-[[exit]]
+[[loop]]
 type = "wait"
 image = "start.png"
+
+
+
+# ===== 退出 =====
 
 [[exit]]
 type = "sleep"
