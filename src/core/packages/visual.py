@@ -31,6 +31,9 @@ from core.packages.constants import (
     DEFAULT_INTERVAL,
     DEFAULT_SCREEN_INDEX,
     DEFAULT_CLICK_OFFSET,
+    MULTI_SCALE_MIN,
+    MULTI_SCALE_MAX,
+    MULTI_SCALE_STEPS,
 )
 
 # 配置日志
@@ -259,7 +262,11 @@ class VisualLocator:
         self,
         template_path: str,
         confidence: Optional[float] = None,
-        region: Optional[Tuple[int, int, int, int]] = None
+        region: Optional[Tuple[int, int, int, int]] = None,
+        multi_scale: bool = False,
+        scale_min: float = MULTI_SCALE_MIN,
+        scale_max: float = MULTI_SCALE_MAX,
+        scale_steps: int = MULTI_SCALE_STEPS,
     ) -> Optional[MatchResult]:
         """
         在屏幕上查找单个模板图片
@@ -268,6 +275,10 @@ class VisualLocator:
             template_path: 模板图片路径
             confidence: 匹配置信度阈值，None 使用默认值
             region: 搜索区域，None 则使用窗口区域
+            multi_scale: 是否启用多尺度匹配
+            scale_min: 多尺度匹配的最小缩放比例
+            scale_max: 多尺度匹配的最大缩放比例
+            scale_steps: 多尺度匹配的单侧步数
 
         Returns:
             匹配结果，未找到返回 None
@@ -282,7 +293,13 @@ class VisualLocator:
         # 捕获屏幕
         screenshot = self.capture_screen(region)
 
-        # 模板匹配
+        if multi_scale:
+            return self._find_template_multi_scale(
+                screenshot, template, tpl_w, tpl_h,
+                confidence, region, scale_min, scale_max, scale_steps,
+            )
+
+        # 单尺度模板匹配（原有逻辑）
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
         _, max_val, _, max_loc = cv2.minMaxLoc(result)
 
@@ -293,13 +310,73 @@ class VisualLocator:
             max_loc[0], max_loc[1], tpl_w, tpl_h, region
         )
         return MatchResult(left, top, width, height, max_val)
+
+    def _find_template_multi_scale(
+        self,
+        screenshot: np.ndarray,
+        template: np.ndarray,
+        tpl_w: int,
+        tpl_h: int,
+        confidence: float,
+        region: Optional[Tuple[int, int, int, int]],
+        scale_min: float,
+        scale_max: float,
+        scale_steps: int,
+    ) -> Optional[MatchResult]:
+        """多尺度模板匹配的内部实现"""
+        scales = self._generate_scale_factors(scale_min, scale_max, scale_steps)
+        best_val = -1.0
+        best_loc = None
+        best_w = tpl_w
+        best_h = tpl_h
+
+        for scale in scales:
+            if abs(scale - 1.0) < 1e-6:
+                scaled_tpl = template
+                sw, sh = tpl_w, tpl_h
+            else:
+                sw = max(1, int(tpl_w * scale))
+                sh = max(1, int(tpl_h * scale))
+                interp = cv2.INTER_AREA if scale < 1.0 else cv2.INTER_LINEAR
+                scaled_tpl = cv2.resize(template, (sw, sh), interpolation=interp)
+
+            # 跳过比截图还大的模板
+            if sh > screenshot.shape[0] or sw > screenshot.shape[1]:
+                continue
+
+            result = cv2.matchTemplate(screenshot, scaled_tpl, cv2.TM_CCOEFF_NORMED)
+            _, max_val, _, max_loc = cv2.minMaxLoc(result)
+
+            if max_val > best_val:
+                best_val = max_val
+                best_loc = max_loc
+                best_w, best_h = sw, sh
+
+        if best_val < confidence or best_loc is None:
+            return None
+
+        logger.debug(
+            "多尺度匹配: %s, 最佳缩放=%.4f, 置信度=%.4f",
+            "template",
+            best_w / tpl_w,
+            best_val,
+        )
+
+        left, top, width, height = self._to_absolute_coords(
+            best_loc[0], best_loc[1], best_w, best_h, region
+        )
+        return MatchResult(left, top, width, height, best_val)
     
     def find_all_templates(
         self,
         template_path: str,
         confidence: Optional[float] = None,
         region: Optional[Tuple[int, int, int, int]] = None,
-        max_results: int = 10
+        max_results: int = 10,
+        multi_scale: bool = False,
+        scale_min: float = MULTI_SCALE_MIN,
+        scale_max: float = MULTI_SCALE_MAX,
+        scale_steps: int = MULTI_SCALE_STEPS,
     ) -> List[MatchResult]:
         """
         在屏幕上查找所有匹配的模板图片
@@ -309,6 +386,10 @@ class VisualLocator:
             confidence: 匹配置信度阈值
             region: 搜索区域
             max_results: 最大返回结果数
+            multi_scale: 是否启用多尺度匹配
+            scale_min: 多尺度匹配的最小缩放比例
+            scale_max: 多尺度匹配的最大缩放比例
+            scale_steps: 多尺度匹配的单侧步数
 
         Returns:
             匹配结果列表
@@ -320,7 +401,14 @@ class VisualLocator:
         tpl_h, tpl_w = template.shape[:2]
         screenshot = self.capture_screen(region)
 
-        # 模板匹配
+        if multi_scale:
+            return self._find_all_templates_multi_scale(
+                screenshot, template, tpl_w, tpl_h,
+                confidence, region, max_results,
+                scale_min, scale_max, scale_steps,
+            )
+
+        # 单尺度模板匹配（原有逻辑）
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
 
         # 使用阈值获取所有匹配位置
@@ -344,6 +432,56 @@ class VisualLocator:
         matches = self._nms(matches, threshold=0.3)
 
         return matches
+
+    def _find_all_templates_multi_scale(
+        self,
+        screenshot: np.ndarray,
+        template: np.ndarray,
+        tpl_w: int,
+        tpl_h: int,
+        confidence: float,
+        region: Optional[Tuple[int, int, int, int]],
+        max_results: int,
+        scale_min: float,
+        scale_max: float,
+        scale_steps: int,
+    ) -> List[MatchResult]:
+        """多尺度查找所有模板匹配的内部实现"""
+        scales = self._generate_scale_factors(scale_min, scale_max, scale_steps)
+        all_matches: List[MatchResult] = []
+
+        for scale in scales:
+            if abs(scale - 1.0) < 1e-6:
+                scaled_tpl = template
+                sw, sh = tpl_w, tpl_h
+            else:
+                sw = max(1, int(tpl_w * scale))
+                sh = max(1, int(tpl_h * scale))
+                interp = cv2.INTER_AREA if scale < 1.0 else cv2.INTER_LINEAR
+                scaled_tpl = cv2.resize(template, (sw, sh), interpolation=interp)
+
+            if sh > screenshot.shape[0] or sw > screenshot.shape[1]:
+                continue
+
+            result = cv2.matchTemplate(screenshot, scaled_tpl, cv2.TM_CCOEFF_NORMED)
+            locations = np.where(result >= confidence)
+
+            for pt in zip(*locations[::-1]):
+                conf = float(result[pt[1], pt[0]])
+
+                left, top, width, height = self._to_absolute_coords(
+                    pt[0], pt[1], sw, sh, region
+                )
+                all_matches.append(MatchResult(left, top, width, height, conf))
+
+                # 提前截断以防候选爆炸，NMS 会进一步精简
+                if len(all_matches) >= max_results * 5:
+                    break
+
+            if len(all_matches) >= max_results * 5:
+                break
+
+        return self._nms(all_matches, threshold=0.3)[:max_results]
     
     @staticmethod
     def _nms(matches: List[MatchResult], threshold: float = 0.3) -> List[MatchResult]:
@@ -397,40 +535,73 @@ class VisualLocator:
         union = area_a + area_b - intersection
         
         return intersection / union if union > 0 else 0.0
-    
+
+    @staticmethod
+    def _generate_scale_factors(
+        scale_min: float = MULTI_SCALE_MIN,
+        scale_max: float = MULTI_SCALE_MAX,
+        scale_steps: int = MULTI_SCALE_STEPS,
+    ) -> List[float]:
+        """
+        生成多尺度匹配的缩放因子列表，包含 1.0
+
+        Args:
+            scale_min: 最小缩放比例
+            scale_max: 最大缩放比例
+            scale_steps: 单侧步数，总尺度数为 2*steps+1
+
+        Returns:
+            对称的缩放因子列表，如 [0.95, 0.967, 0.983, 1.0, 1.017, 1.033, 1.05]
+        """
+        if scale_steps <= 0:
+            return [1.0]
+        return np.linspace(scale_min, scale_max, 2 * scale_steps + 1).tolist()
+
     def wait_for_template(
         self,
         template_path: str,
         timeout: float = DEFAULT_TIMEOUT,
         interval: float = DEFAULT_INTERVAL,
         confidence: Optional[float] = None,
-        region: Optional[Tuple[int, int, int, int]] = None
+        region: Optional[Tuple[int, int, int, int]] = None,
+        multi_scale: bool = False,
+        scale_min: float = MULTI_SCALE_MIN,
+        scale_max: float = MULTI_SCALE_MAX,
+        scale_steps: int = MULTI_SCALE_STEPS,
     ) -> Optional[MatchResult]:
         """
         等待模板图片出现在屏幕上
-        
+
         Args:
             template_path: 模板图片路径
             timeout: 超时时间（秒）
             interval: 检查间隔（秒）
             confidence: 匹配置信度
             region: 搜索区域
-            
+            multi_scale: 是否启用多尺度匹配
+            scale_min: 多尺度匹配的最小缩放比例
+            scale_max: 多尺度匹配的最大缩放比例
+            scale_steps: 多尺度匹配的单侧步数
+
         Returns:
             匹配结果，超时返回 None
         """
         start_time = time.time()
-        
+
         while True:
-            result = self.find_template(template_path, confidence, region)
+            result = self.find_template(
+                template_path, confidence, region,
+                multi_scale=multi_scale, scale_min=scale_min,
+                scale_max=scale_max, scale_steps=scale_steps,
+            )
             if result is not None:
                 logger.info(f"找到模板: {template_path}, 置信度: {result.confidence:.3f}")
                 return result
-            
+
             if timeout > 0 and time.time() - start_time > timeout:
                 logger.warning(f"等待模板超时({timeout}s): {template_path}")
                 return None
-            
+
             time.sleep(interval)
     
     def wait_for_template_disappear(
@@ -439,33 +610,45 @@ class VisualLocator:
         timeout: float = DEFAULT_TIMEOUT,
         interval: float = DEFAULT_INTERVAL,
         confidence: Optional[float] = None,
-        region: Optional[Tuple[int, int, int, int]] = None
+        region: Optional[Tuple[int, int, int, int]] = None,
+        multi_scale: bool = False,
+        scale_min: float = MULTI_SCALE_MIN,
+        scale_max: float = MULTI_SCALE_MAX,
+        scale_steps: int = MULTI_SCALE_STEPS,
     ) -> bool:
         """
         等待模板图片从屏幕上消失
-        
+
         Args:
             template_path: 模板图片路径
             timeout: 超时时间（秒）
             interval: 检查间隔（秒）
             confidence: 匹配置信度
             region: 搜索区域
-            
+            multi_scale: 是否启用多尺度匹配
+            scale_min: 多尺度匹配的最小缩放比例
+            scale_max: 多尺度匹配的最大缩放比例
+            scale_steps: 多尺度匹配的单侧步数
+
         Returns:
             True-成功消失, False-超时仍未消失
         """
         start_time = time.time()
-        
+
         while True:
-            result = self.find_template(template_path, confidence, region)
+            result = self.find_template(
+                template_path, confidence, region,
+                multi_scale=multi_scale, scale_min=scale_min,
+                scale_max=scale_max, scale_steps=scale_steps,
+            )
             if result is None:
                 logger.info(f"模板已消失: {template_path}")
                 return True
-            
+
             if timeout > 0 and time.time() - start_time > timeout:
                 logger.warning(f"等待模板消失超时({timeout}s): {template_path}")
                 return False
-            
+
             time.sleep(interval)
 
 
@@ -545,11 +728,15 @@ class VisualInteractor:
         check_interval: float = DEFAULT_INTERVAL,
         click_offset: Tuple[int, int] = DEFAULT_CLICK_OFFSET,
         confidence: Optional[float] = None,
-        on_timeout: Optional[Callable[[], None]] = None
+        on_timeout: Optional[Callable[[], None]] = None,
+        multi_scale: bool = False,
+        scale_min: float = MULTI_SCALE_MIN,
+        scale_max: float = MULTI_SCALE_MAX,
+        scale_steps: int = MULTI_SCALE_STEPS,
     ) -> bool:
         """
         等待并点击模板图片
-        
+
         Args:
             template_path: 模板图片路径
             timeout: 查找超时时间
@@ -557,7 +744,11 @@ class VisualInteractor:
             click_offset: 点击偏移量
             confidence: 匹配置信度
             on_timeout: 超时回调函数
-            
+            multi_scale: 是否启用多尺度匹配
+            scale_min: 多尺度匹配的最小缩放比例
+            scale_max: 多尺度匹配的最大缩放比例
+            scale_steps: 多尺度匹配的单侧步数
+
         Returns:
             True-成功点击, False-超时
         """
@@ -565,15 +756,19 @@ class VisualInteractor:
             template_path,
             timeout=timeout,
             interval=check_interval,
-            confidence=confidence
+            confidence=confidence,
+            multi_scale=multi_scale,
+            scale_min=scale_min,
+            scale_max=scale_max,
+            scale_steps=scale_steps,
         )
-        
+
         if result is None:
             logger.warning(f"点击失败，查找超时: {template_path}")
             if on_timeout:
                 on_timeout()
             return False
-        
+
         return self.click(result, offset=click_offset)
     
     def move_to(
@@ -603,18 +798,26 @@ def click(
     timeout: float = DEFAULT_TIMEOUT,
     confidence: float = DEFAULT_CONFIDENCE,
     timesleep: float = 0.5,
-    on_failure: Optional[Callable[[], None]] = None
+    on_failure: Optional[Callable[[], None]] = None,
+    multi_scale: bool = False,
+    scale_min: float = MULTI_SCALE_MIN,
+    scale_max: float = MULTI_SCALE_MAX,
+    scale_steps: int = MULTI_SCALE_STEPS,
 ) -> bool:
     """
     在屏幕上查找模板图片并点击其中心位置（向后兼容）
-    
+
     Args:
         image_path: 模板图片路径
         timeout: 查找超时时间（秒）
         confidence: 匹配置信度
         timesleep: 点击前的等待时间（默认0.5秒）
         on_failure: 失败时的回调函数
-        
+        multi_scale: 是否启用多尺度匹配
+        scale_min: 多尺度匹配的最小缩放比例
+        scale_max: 多尺度匹配的最大缩放比例
+        scale_steps: 多尺度匹配的单侧步数
+
     Returns:
         True-成功点击, False-失败/超时
     """
@@ -624,7 +827,11 @@ def click(
             image_path,
             timeout=timeout,
             confidence=confidence,
-            on_timeout=on_failure
+            on_timeout=on_failure,
+            multi_scale=multi_scale,
+            scale_min=scale_min,
+            scale_max=scale_max,
+            scale_steps=scale_steps,
         )
 
 
@@ -633,41 +840,65 @@ def click(
 def wait_image_appear(
     image_path: str,
     timeout: float = DEFAULT_TIMEOUT,
-    confidence: float = DEFAULT_CONFIDENCE
+    confidence: float = DEFAULT_CONFIDENCE,
+    multi_scale: bool = False,
+    scale_min: float = MULTI_SCALE_MIN,
+    scale_max: float = MULTI_SCALE_MAX,
+    scale_steps: int = MULTI_SCALE_STEPS,
 ) -> Optional[MatchResult]:
     """
     等待图片出现在屏幕上
-    
+
     Args:
         image_path: 模板图片路径
         timeout: 超时时间（秒）
         confidence: 匹配置信度
-        
+        multi_scale: 是否启用多尺度匹配
+        scale_min: 多尺度匹配的最小缩放比例
+        scale_max: 多尺度匹配的最大缩放比例
+        scale_steps: 多尺度匹配的单侧步数
+
     Returns:
         匹配结果或 None
     """
     with VisualLocator(confidence=confidence) as locator:
-        return locator.wait_for_template(image_path, timeout=timeout)
+        return locator.wait_for_template(
+            image_path, timeout=timeout,
+            multi_scale=multi_scale, scale_min=scale_min,
+            scale_max=scale_max, scale_steps=scale_steps,
+        )
 
 
 def wait_image_disappear(
     image_path: str,
     timeout: float = DEFAULT_TIMEOUT,
-    confidence: float = DEFAULT_CONFIDENCE
+    confidence: float = DEFAULT_CONFIDENCE,
+    multi_scale: bool = False,
+    scale_min: float = MULTI_SCALE_MIN,
+    scale_max: float = MULTI_SCALE_MAX,
+    scale_steps: int = MULTI_SCALE_STEPS,
 ) -> bool:
     """
     等待图片从屏幕上消失
-    
+
     Args:
         image_path: 模板图片路径
         timeout: 超时时间（秒）
         confidence: 匹配置信度
-        
+        multi_scale: 是否启用多尺度匹配
+        scale_min: 多尺度匹配的最小缩放比例
+        scale_max: 多尺度匹配的最大缩放比例
+        scale_steps: 多尺度匹配的单侧步数
+
     Returns:
         True-成功消失, False-超时
     """
     with VisualLocator(confidence=confidence) as locator:
-        return locator.wait_for_template_disappear(image_path, timeout=timeout)
+        return locator.wait_for_template_disappear(
+            image_path, timeout=timeout,
+            multi_scale=multi_scale, scale_min=scale_min,
+            scale_max=scale_max, scale_steps=scale_steps,
+        )
 
 
 def scroll(amount: int) -> None:
@@ -683,20 +914,32 @@ def scroll(amount: int) -> None:
 def find_all_images(
     image_path: str,
     confidence: float = DEFAULT_CONFIDENCE,
-    max_results: int = 10
+    max_results: int = 10,
+    multi_scale: bool = False,
+    scale_min: float = MULTI_SCALE_MIN,
+    scale_max: float = MULTI_SCALE_MAX,
+    scale_steps: int = MULTI_SCALE_STEPS,
 ) -> List[MatchResult]:
     """
     查找屏幕上所有匹配的图片
-    
+
     Args:
         image_path: 模板图片路径
         confidence: 匹配置信度
         max_results: 最大结果数
-        
+        multi_scale: 是否启用多尺度匹配
+        scale_min: 多尺度匹配的最小缩放比例
+        scale_max: 多尺度匹配的最大缩放比例
+        scale_steps: 多尺度匹配的单侧步数
+
     Returns:
         匹配结果列表
     """
     with VisualLocator(confidence=confidence) as locator:
-        return locator.find_all_templates(image_path, max_results=max_results)
+        return locator.find_all_templates(
+            image_path, max_results=max_results,
+            multi_scale=multi_scale, scale_min=scale_min,
+            scale_max=scale_max, scale_steps=scale_steps,
+        )
 
 

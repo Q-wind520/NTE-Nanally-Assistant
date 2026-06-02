@@ -44,6 +44,11 @@ DEFAULT_INTERVAL = 0.5               # 默认查找检查间隔（秒）
 DEFAULT_SCREEN_INDEX = 0             # MSS 屏幕索引
 DEFAULT_CLICK_OFFSET = (0, 0)        # 点击偏移量
 
+# ==================== 多尺度模板匹配 ====================
+MULTI_SCALE_MIN = 0.95              # 最小缩放比例
+MULTI_SCALE_MAX = 1.05              # 最大缩放比例
+MULTI_SCALE_STEPS = 3               # 单侧步数，总尺度数为 2*steps+1
+
 # ==================== 退出/UI ====================
 DEFAULT_TITLE = "NTE Nanally Assistant"
 DEFAULT_AUTHOR = "Q-wind520"
