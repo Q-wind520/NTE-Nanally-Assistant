@@ -4,7 +4,6 @@ description = "半自动钓鱼"
 
 [setup]
 base_path = "./assets/DY/"
-wait_for_resolution = true
 
 # ===== 等待钓鱼点 =====
 

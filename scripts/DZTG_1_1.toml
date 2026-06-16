@@ -12,6 +12,7 @@ base_path = "./assets/DZTG_1-1/"
 [[enter]]
 type = "wait"
 image = "join.png"
+confidence = 0.6
 
 [[enter]]
 type = "press"
