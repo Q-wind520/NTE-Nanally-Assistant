@@ -10,8 +10,13 @@ from pathlib import Path
 
 
 def get_asset_path(*parts: str) -> Path:
-    """获取资源路径，兼容 PyInstaller 打包和开发环境。"""
-    base = Path(getattr(sys, '_MEIPASS', '.')) if getattr(sys, 'frozen', False) else Path.cwd()
+    """获取资源路径，兼容 PyInstaller / Nuitka 打包和开发环境。"""
+    if getattr(sys, 'frozen', False):
+        base = Path(sys._MEIPASS)
+    elif getattr(__import__('builtins'), '__compiled__', False):
+        base = Path(sys.executable).parent
+    else:
+        base = Path.cwd()
     return base.joinpath(*parts)
 
 
