@@ -1,6 +1,6 @@
 [meta]
 name = "海上钓客"
-description = "半自动钓鱼"
+description = "全自动钓鱼"
 
 [setup]
 base_path = "./assets/DY/"
@@ -56,19 +56,13 @@ timeout = 20.0
 confidence = 0.7
 
 [[loop]]
-type = "continue_if_not"
-image = "upfish.png"
-timeout = 0.1
-confidence = 0.7
-message = "Script: 鱼儿逃走了"
-
-[[loop]]
 type = "press"
 key = "f"
 
 [[loop]]
-type = "sleep"
-duration = 2.0
+type = "call"
+name = "fishing_bar_control"
+timeout = 30.0
 
 [[loop]]
 type = "wait"
@@ -81,9 +75,13 @@ type = "sleep"
 duration = 0.5
 
 [[loop]]
-type = "click_at"
+type = "press"
+key = "esc"
 
 # ===== 退出 =====
+[[exit]]
+type = "sleep"
+duration = 0.5
 
 [[exit]]
 type = "press"
@@ -91,7 +89,7 @@ key = "esc"
 
 [[exit]]
 type = "sleep"
-duration = 1.0
+duration = 1
 
 [[exit]]
 type = "press"

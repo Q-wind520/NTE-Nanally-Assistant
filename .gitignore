@@ -1,12 +1,22 @@
-*.log
-/build
-/dist
-/.vscode
+# 环境与配置
 /.venv
 /.idea
+/.claude
+/.opencode
+/.vscode
+AGENTS.md
+
+# 测试与调试
 开发日志.prg
 /test
-/.claude
+debug_screenshot.png
+*.log
+/tools
+
+# 构建与打包
+/build
+/dist
+
+# 其他
 *.pyc
 NTE_Nanally_Assistant.egg-info
-debug_screenshot.png
