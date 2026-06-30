@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMainWindow,
     QMenu,
     QPushButton,
@@ -35,42 +36,10 @@ from core.packages.menu import register_all_scripts, get_registry
 
 from gui.script_worker import ScriptWorker
 from gui.log_handler import get_log_signal
+from core.settings import load as load_settings, save as save_settings
+import gui.theme as theme
 
 logger = logging.getLogger(__name__)
-
-SIDEBAR_STYLE = """
-QPushButton {
-    background: #2b2b2b;
-    color: #cccccc;
-    border: none;
-    border-left: 3px solid transparent;
-    padding: 12px 16px;
-    text-align: left;
-    font-size: 14px;
-}
-QPushButton:hover {
-    background: #3c3c3c;
-    color: #ffffff;
-}
-QPushButton:checked {
-    background: #353535;
-    color: #ffffff;
-    border-left: 3px solid #6b9fed;
-}
-"""
-
-
-def _is_dark_mode() -> bool:
-    cs = QApplication.styleHints().colorScheme()
-    return cs == Qt.ColorScheme.Dark
-
-
-def _card_bg() -> str:
-    return "#3c3c3c" if _is_dark_mode() else "#f5f5f5"
-
-
-def _text_color() -> str:
-    return "#e0e0e0" if _is_dark_mode() else "#333333"
 
 
 def _icon_path() -> str:
@@ -95,9 +64,14 @@ class MainWindow(QMainWindow):
 
         self._worker: ScriptWorker | None = None
 
+        _cfg = load_settings()
+        if _cfg.get("accent_color"):
+            theme.set_accent_color(_cfg["accent_color"])
+        theme.set_theme_override(_cfg.get("theme_override"))
+
         self._build_ui()
         self._setup_tray()
-        self._connect_signals()
+        self._connect_global_signals()
         self._populate_scripts()
         self._start_status_poll()
 
@@ -113,149 +87,240 @@ class MainWindow(QMainWindow):
         root.setSpacing(0)
 
         # --- 侧边栏 ---
-        sidebar = QWidget()
-        sidebar.setFixedWidth(160)
-        sidebar.setStyleSheet("background: #2b2b2b;")
-        sidebar_layout = QVBoxLayout(sidebar)
+        self._sidebar = QWidget()
+        self._sidebar.setFixedWidth(160)
+        sidebar_layout = QVBoxLayout(self._sidebar)
         sidebar_layout.setContentsMargins(0, 8, 0, 8)
         sidebar_layout.setSpacing(2)
 
         self._nav_group = QButtonGroup(self)
         self._nav_group.setExclusive(True)
 
-        nav_home = QPushButton("  主页")
-        nav_home.setCheckable(True)
-        nav_home.setChecked(True)
-        nav_home.setStyleSheet(SIDEBAR_STYLE)
-        nav_home.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._nav_home = QPushButton("  主页")
+        self._nav_home.setCheckable(True)
+        self._nav_home.setChecked(True)
+        self._nav_home.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        nav_log = QPushButton("  日志")
-        nav_log.setCheckable(True)
-        nav_log.setStyleSheet(SIDEBAR_STYLE)
-        nav_log.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._nav_settings = QPushButton("  设置")
+        self._nav_settings.setCheckable(True)
+        self._nav_settings.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        nav_about = QPushButton("  关于")
-        nav_about.setCheckable(True)
-        nav_about.setStyleSheet(SIDEBAR_STYLE)
-        nav_about.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._nav_about = QPushButton("  关于")
+        self._nav_about.setCheckable(True)
+        self._nav_about.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        self._nav_group.addButton(nav_home, 0)
-        self._nav_group.addButton(nav_log, 1)
-        self._nav_group.addButton(nav_about, 2)
+        self._nav_group.addButton(self._nav_home, 0)
+        self._nav_group.addButton(self._nav_settings, 1)
+        self._nav_group.addButton(self._nav_about, 2)
 
-        sidebar_layout.addWidget(nav_home)
-        sidebar_layout.addWidget(nav_log)
-        sidebar_layout.addWidget(nav_about)
+        sidebar_layout.addWidget(self._nav_home)
+        sidebar_layout.addWidget(self._nav_settings)
+        sidebar_layout.addWidget(self._nav_about)
         sidebar_layout.addStretch()
 
-        root.addWidget(sidebar)
+        root.addWidget(self._sidebar)
 
         # --- 页面容器 ---
         self._pages = QStackedWidget()
         self._pages.addWidget(self._build_home_page())
-        self._pages.addWidget(self._build_log_page())
+        self._pages.addWidget(self._build_settings_page())
         self._pages.addWidget(self._build_about_page())
 
         self._nav_group.idClicked.connect(self._pages.setCurrentIndex)
 
         root.addWidget(self._pages, 1)
 
+        self._connect_page_signals()
+
         # --- 状态栏 ---
         self._status_bar = QStatusBar()
         self.setStatusBar(self._status_bar)
         self._status_bar.showMessage("就绪")
 
+        # --- 全局主题 ---
+        QApplication.instance().setStyleSheet(theme._global_qss())
+        self._update_sidebar_theme()
+
     def _build_home_page(self) -> QWidget:
         page = QWidget()
+        page.setStyleSheet(f"background: {theme._page_bg()};")
         layout = QVBoxLayout(page)
         layout.setSpacing(12)
         layout.setContentsMargins(20, 16, 20, 16)
 
-        # 游戏状态
-        title_label = QLabel("游戏状态")
-        title_label.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {_text_color()};")
-        layout.addWidget(title_label)
-
         status_widget = QWidget()
-        status_widget.setStyleSheet(f"background: {_card_bg()}; border-radius: 6px; padding: 12px;")
-        status_layout = QHBoxLayout(status_widget)
+        status_widget.setStyleSheet(f"background: {theme._card_bg()}; border-radius: 6px; padding: 12px;")
+        status_layout = QVBoxLayout(status_widget)
+        status_layout.setSpacing(6)
+        title_label = QLabel("游戏状态")
+        title_label.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {theme._text_color()};")
+        status_layout.addWidget(title_label)
+        status_row = QHBoxLayout()
         self._process_label = QLabel("等待检测...")
         self._resolution_label = QLabel("等待检测...")
-        status_layout.addWidget(self._process_label)
-        status_layout.addWidget(self._resolution_label)
-        status_layout.addStretch()
+        status_row.addWidget(self._process_label)
+        status_row.addWidget(self._resolution_label)
+        status_row.addStretch()
+        status_layout.addLayout(status_row)
         layout.addWidget(status_widget)
 
-        # 脚本控制
-        title_label2 = QLabel("脚本控制")
-        title_label2.setStyleSheet("font-size: 15px; font-weight: bold; color: #333;")
-        layout.addWidget(title_label2)
+        # 左右分栏：实时日志 | 脚本控制
+        split_layout = QHBoxLayout()
+        split_layout.setSpacing(12)
 
-        control_widget = QWidget()
-        control_widget.setStyleSheet(f"background: {_card_bg()}; border-radius: 6px; padding: 12px;")
-        control_layout = QHBoxLayout(control_widget)
+        # ---- 左侧：实时日志 ----
+        log_widget = QWidget()
+        log_widget.setStyleSheet(f"background: {theme._card_bg()}; border-radius: 6px; padding: 12px;")
+        log_layout = QVBoxLayout(log_widget)
+        log_layout.setSpacing(8)
 
-        control_layout.addWidget(QLabel("脚本:"))
-        self._script_combo = QComboBox()
-        self._script_combo.setMinimumWidth(200)
-        control_layout.addWidget(self._script_combo)
-
-        control_layout.addWidget(QLabel("执行次数:"))
-        self._times_spin = QSpinBox()
-        self._times_spin.setRange(1, 9999)
-        self._times_spin.setValue(1)
-        control_layout.addWidget(self._times_spin)
-
-        self._start_btn = QPushButton("▶ 开始执行")
-        self._stop_btn = QPushButton("■ 停止")
-        self._stop_btn.setEnabled(False)
-        self._reload_btn = QPushButton("🔄 重载脚本")
-
-        control_layout.addWidget(self._start_btn)
-        control_layout.addWidget(self._stop_btn)
-        control_layout.addWidget(self._reload_btn)
-        control_layout.addStretch()
-        layout.addWidget(control_widget)
-
-        layout.addStretch()
-        return page
-
-    def _build_log_page(self) -> QWidget:
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setSpacing(8)
-        layout.setContentsMargins(20, 16, 20, 16)
-
-        header = QHBoxLayout()
-        title_label = QLabel("实时日志")
-        title_label.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {_text_color()};")
-        header.addWidget(title_label)
-        header.addStretch()
-
+        log_header = QHBoxLayout()
+        log_title = QLabel("实时日志")
+        log_title.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {theme._text_color()};")
+        log_header.addWidget(log_title)
+        log_header.addStretch()
         self._clear_btn = QPushButton("清空日志")
-        header.addWidget(self._clear_btn)
-        layout.addLayout(header)
+        log_header.addWidget(self._clear_btn)
+        log_layout.addLayout(log_header)
 
         self._log_output = QTextEdit()
         self._log_output.setReadOnly(True)
         self._log_output.setFont(QFont("Consolas", 10))
         self._log_output.document().setMaximumBlockCount(5000)
-        layout.addWidget(self._log_output)
+        log_layout.addWidget(self._log_output)
 
+        split_layout.addWidget(log_widget, 1)
+
+        # ---- 右侧：脚本控制 ----
+        control_widget = QWidget()
+        control_widget.setStyleSheet(f"background: {theme._card_bg()}; border-radius: 6px; padding: 12px;")
+        control_layout = QVBoxLayout(control_widget)
+        control_layout.setSpacing(10)
+
+        control_header = QHBoxLayout()
+        control_title = QLabel("脚本控制")
+        control_title.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {theme._text_color()};")
+        control_header.addWidget(control_title)
+        control_header.addStretch()
+        self._reload_btn = QPushButton("重载脚本")
+        control_header.addWidget(self._reload_btn)
+        control_layout.addLayout(control_header)
+
+        script_row = QHBoxLayout()
+        script_row.addWidget(QLabel("脚本:"))
+        self._script_combo = QComboBox()
+        self._script_combo.setMinimumWidth(200)
+        script_row.addWidget(self._script_combo, 1)
+        control_layout.addLayout(script_row)
+
+        self._script_intro = QLabel()
+        self._script_intro.setWordWrap(True)
+        self._script_intro.setStyleSheet(f"font-size: 12px; color: {theme._text_color()};")
+        control_layout.addWidget(self._script_intro)
+
+        times_row = QHBoxLayout()
+        times_row.addWidget(QLabel("执行次数:"))
+        self._times_spin = QSpinBox()
+        self._times_spin.setRange(1, 9999)
+        self._times_spin.setValue(1)
+        times_row.addWidget(self._times_spin)
+        times_row.addStretch()
+        control_layout.addLayout(times_row)
+
+        control_layout.addStretch()
+
+        self._toggle_btn = QPushButton("▶ 开始执行")
+        self._style_toggle_btn()
+        control_layout.addWidget(self._toggle_btn)
+
+        split_layout.addWidget(control_widget)
+
+        layout.addLayout(split_layout)
+        return page
+
+    def _build_settings_page(self) -> QWidget:
+        page = QWidget()
+        page.setStyleSheet(f"background: {theme._page_bg()};")
+        layout = QVBoxLayout(page)
+        layout.setSpacing(16)
+        layout.setContentsMargins(20, 16, 20, 16)
+
+        title_label = QLabel("设置")
+        title_label.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {theme._text_color()};")
+        layout.addWidget(title_label)
+
+        # 外观设置
+        appearance_widget = QWidget()
+        appearance_widget.setStyleSheet(f"background: {theme._card_bg()}; border-radius: 6px; padding: 16px;")
+        appearance_layout = QVBoxLayout(appearance_widget)
+        appearance_layout.setSpacing(12)
+
+        appearance_title = QLabel("外观设置")
+        appearance_title.setStyleSheet(f"font-size: 14px; font-weight: bold; color: {theme._text_color()};")
+        appearance_layout.addWidget(appearance_title)
+
+        theme_row = QHBoxLayout()
+        theme_row.addWidget(QLabel("主题模式:"))
+        self._theme_combo = QComboBox()
+        self._theme_combo.addItem("跟随系统", "system")
+        self._theme_combo.addItem("浅色", "light")
+        self._theme_combo.addItem("深色", "dark")
+        if theme._theme_override is None:
+            self._theme_combo.setCurrentIndex(0)
+        elif theme._theme_override == "light":
+            self._theme_combo.setCurrentIndex(1)
+        else:
+            self._theme_combo.setCurrentIndex(2)
+        self._theme_combo.currentIndexChanged.connect(self._on_theme_changed)
+        theme_row.addWidget(self._theme_combo)
+        theme_row.addStretch()
+        appearance_layout.addLayout(theme_row)
+
+        # 主题色
+        accent_row = QHBoxLayout()
+        accent_row.addWidget(QLabel("主题色:"))
+
+        self._preset_colors = ["#6b9fed", "#ff6b9d", "#ff4444", "#44bb44", "#ff8844"]
+        self._accent_presets = []
+        for c in self._preset_colors:
+            btn = QPushButton()
+            btn.setFixedSize(24, 24)
+            selected = "border: 2px solid #000000;" if c == theme._accent_color else "border: 2px solid #888888;"
+            btn.setStyleSheet(
+                f"QPushButton {{ background-color: {c}; {selected} border-radius: 4px; }}"
+                f"QPushButton:hover {{ border: 2px solid #000000; }}"
+            )
+            btn.clicked.connect(lambda checked, color=c: self._on_accent_picked(color))
+            self._accent_presets.append(btn)
+            accent_row.addWidget(btn)
+
+        accent_row.addStretch()
+        accent_row.addWidget(QLabel("自定义:"))
+        self._accent_input = QLineEdit()
+        self._accent_input.setMaxLength(7)
+        self._accent_input.setPlaceholderText("#RRGGBB")
+        self._accent_input.setText(theme._accent_color)
+        self._accent_input.textChanged.connect(self._on_accent_input_changed)
+        accent_row.addWidget(self._accent_input)
+        appearance_layout.addLayout(accent_row)
+
+        layout.addWidget(appearance_widget)
+        layout.addStretch()
         return page
 
     def _build_about_page(self) -> QWidget:
         page = QWidget()
+        page.setStyleSheet(f"background: {theme._page_bg()};")
         layout = QVBoxLayout(page)
         layout.setSpacing(16)
         layout.setContentsMargins(20, 16, 20, 16)
 
         title_label = QLabel("关于")
-        title_label.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {_text_color()};")
+        title_label.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {theme._text_color()};")
         layout.addWidget(title_label)
 
         info_widget = QWidget()
-        info_widget.setStyleSheet(f"background: {_card_bg()}; border-radius: 6px; padding: 16px;")
+        info_widget.setStyleSheet(f"background: {theme._card_bg()}; border-radius: 6px; padding: 16px;")
         info_layout = QVBoxLayout(info_widget)
         info_layout.setSpacing(12)
 
@@ -304,7 +369,7 @@ class MainWindow(QMainWindow):
             "但必须保留相同的许可证并公开源代码。"
         )
         license_desc.setWordWrap(True)
-        license_desc.setStyleSheet(f"font-size: 12px; color: {_text_color()}; opacity: 0.7;")
+        license_desc.setStyleSheet(f"font-size: 12px; color: {theme._text_color()}; opacity: 0.7;")
         info_layout.addWidget(license_desc)
 
         layout.addWidget(info_widget)
@@ -322,7 +387,7 @@ class MainWindow(QMainWindow):
         for key, info in all_scripts.items():
             if key == "0":
                 continue
-            self._script_combo.addItem(f"{info.name}  -  {info.description}", info)
+            self._script_combo.addItem(info.name, info)
         self._on_script_changed(0)
 
     def _reload_scripts(self) -> None:
@@ -336,13 +401,80 @@ class MainWindow(QMainWindow):
     # 信号连接
     # ------------------------------------------------------------------
 
-    def _connect_signals(self) -> None:
+    def _connect_global_signals(self) -> None:
+        """只连接一次的非页面信号"""
+        get_log_signal().message.connect(self._append_log)
+
+    def _connect_page_signals(self) -> None:
+        """页面重建后需要重新连接的信号"""
         self._script_combo.currentIndexChanged.connect(self._on_script_changed)
-        self._start_btn.clicked.connect(self._start_script)
-        self._stop_btn.clicked.connect(self._stop_script)
+        self._toggle_btn.clicked.connect(self._toggle_script)
         self._reload_btn.clicked.connect(self._reload_scripts)
         self._clear_btn.clicked.connect(self._log_output.clear)
-        get_log_signal().message.connect(self._append_log)
+
+    # ------------------------------------------------------------------
+    # 主题
+    # ------------------------------------------------------------------
+
+    def _on_theme_changed(self, index: int) -> None:
+        mode = self._theme_combo.itemData(index)
+        theme.set_theme_override(None if mode == "system" else mode)
+        save_settings(theme_override=theme._theme_override)
+        self._apply_theme()
+
+    def _apply_theme(self) -> None:
+        idx = self._pages.currentIndex()
+
+        while self._pages.count():
+            w = self._pages.widget(0)
+            self._pages.removeWidget(w)
+            w.deleteLater()
+
+        self._pages.addWidget(self._build_home_page())
+        self._pages.addWidget(self._build_settings_page())
+        self._pages.addWidget(self._build_about_page())
+
+        if idx < self._pages.count():
+            self._pages.setCurrentIndex(idx)
+        else:
+            self._pages.setCurrentIndex(0)
+
+        self._connect_page_signals()
+        self._populate_scripts()
+        QApplication.instance().setStyleSheet(theme._global_qss())
+        self._update_sidebar_theme()
+        self._append_log(f"[INFO] 主题已切换")
+
+    def _update_sidebar_theme(self) -> None:
+        dark = theme._is_dark_mode()
+        self._sidebar.setStyleSheet(f"background: {'#2b2b2b' if dark else '#e0e0e0'};")
+        for btn in (self._nav_home, self._nav_settings, self._nav_about):
+            btn.setStyleSheet(theme._sidebar_style())
+
+    def _on_accent_picked(self, color: str) -> None:
+        theme.set_accent_color(color)
+        save_settings(accent_color=color)
+        self._accent_input.setText(color)
+        self._apply_accent()
+
+    def _on_accent_input_changed(self, text: str) -> None:
+        if len(text) == 7 and text.startswith("#"):
+            theme.set_accent_color(text)
+            save_settings(accent_color=text)
+            self._apply_accent()
+
+    def _apply_accent(self) -> None:
+        for i, btn in enumerate(self._accent_presets):
+            c = self._preset_colors[i]
+            selected = "border: 2px solid #000000;" if c == theme._accent_color else "border: 2px solid #888888;"
+            btn.setStyleSheet(
+                f"QPushButton {{ background-color: {c}; {selected} border-radius: 4px; }}"
+                f"QPushButton:hover {{ border: 2px solid #000000; }}"
+            )
+        QApplication.instance().setStyleSheet(theme._global_qss())
+        self._update_sidebar_theme()
+        self._style_toggle_btn()
+        self._append_log(f"[INFO] 主题色已切换")
 
     # ------------------------------------------------------------------
     # 脚本启停
@@ -352,6 +484,15 @@ class MainWindow(QMainWindow):
         info = self._script_combo.currentData()
         if info is not None:
             self._times_spin.setEnabled(info.need_times_param)
+            self._script_intro.setText(info.description)
+        else:
+            self._script_intro.setText("")
+
+    def _toggle_script(self) -> None:
+        if self._toggle_btn.text() == "▶ 开始执行":
+            self._start_script()
+        else:
+            self._stop_script()
 
     def _start_script(self) -> None:
         info = self._script_combo.currentData()
@@ -401,9 +542,31 @@ class MainWindow(QMainWindow):
 
     # --- worker callbacks ---
 
+    def _style_toggle_btn(self) -> None:
+        is_start = self._toggle_btn.text() == "▶ 开始执行"
+        bg = "#6b9fed" if is_start else "#ff4444"
+        self._toggle_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {bg};
+                color: #ffffff;
+                font-weight: bold;
+                font-size: 14px;
+                border: 1px solid {theme._accent_color};
+                padding: 8px 16px;
+                border-radius: 4px;
+            }}
+            QPushButton:hover {{
+                background-color: {bg}cc;
+            }}
+            QPushButton:disabled {{
+                background-color: #666666;
+                color: #999999;
+            }}
+        """)
+
     def _on_worker_started(self, name: str) -> None:
-        self._start_btn.setEnabled(False)
-        self._stop_btn.setEnabled(True)
+        self._toggle_btn.setText("■ 停止")
+        self._style_toggle_btn()
         self._script_combo.setEnabled(False)
         self._reload_btn.setEnabled(False)
         self._status_bar.showMessage(f"运行中: {name}")
@@ -415,8 +578,8 @@ class MainWindow(QMainWindow):
         self._append_log(f"[ERROR] 脚本异常: {msg}")
 
     def _on_worker_done(self) -> None:
-        self._start_btn.setEnabled(True)
-        self._stop_btn.setEnabled(False)
+        self._toggle_btn.setText("▶ 开始执行")
+        self._style_toggle_btn()
         self._script_combo.setEnabled(True)
         self._reload_btn.setEnabled(True)
         self._status_bar.showMessage("就绪")
