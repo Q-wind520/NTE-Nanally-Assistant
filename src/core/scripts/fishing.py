@@ -16,13 +16,11 @@ from core.scripts._base import register, BuiltinContext
 
 logger = logging.getLogger(__name__)
 
-# 钓鱼条区域（比例坐标，相对于 720p 参考）
 BAR_LEFT = 0.2060
 BAR_TOP = 0.05200
 BAR_RIGHT = 0.7900
 BAR_BOTTOM = 0.0780
 
-# HSV 范围
 GREEN_HSV_LOW = (80, 150, 100)
 GREEN_HSV_HIGH = (90, 255, 255)
 YELLOW_HSV_LOW = (0, 30, 160)
@@ -86,7 +84,7 @@ def _detect_bar_state(screenshot: np.ndarray) -> dict[str, Any] | None:
     }
 
 
-def _control_tick_discrete(state: dict[str, Any], params: dict[str, Any]) -> None:
+def _control_tick(state: dict[str, Any], params: dict[str, Any]) -> None:
     deadzone = params.get("deadzone", 0.08) * state["zone_width"]
     tap_multiplier = params.get("tap_multiplier", 1.0)
 
@@ -107,58 +105,98 @@ def _control_tick_discrete(state: dict[str, Any], params: dict[str, Any]) -> Non
     pdi.keyUp(key)
 
 
-@register("fishing_bar_control")
-def fishing_bar_control(ctx: BuiltinContext) -> None:
-    """
-    全自动钓鱼条控制。
+def _wait_for_bar(locator: VisualLocator, region: tuple, timeout: float) -> dict[str, Any] | None:
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        shot = locator.capture_screen(region=region)
+        state = _detect_bar_state(shot)
+        if state is not None:
+            return state
+        time.sleep(0.1)
+    return None
 
-    检测钓鱼条（绿色目标区 + 黄色指针），用 A/D 键将指针维持在目标区内。
 
-    Params:
-        timeout (float): 单次溜鱼超时（秒，默认 30）
-        tap_multiplier (float): 点按时长系数（默认 0.5）
-        deadzone (float): 死区占 zone_width 比例（默认 0.08）
-        bar_wait (float): 等待 bar 出现的最长时间（秒，默认 3.0）
+def _run_control_loop(locator: VisualLocator, region: tuple,
+                      timeout: float, params: dict[str, Any]) -> bool:
+    """Returns True on success, False if fish escaped."""
+    deadline = time.time() + timeout
+    control_start = time.time()
+    sustained_duration = 0.0
+
+    while time.time() < deadline:
+        shot = locator.capture_screen(region=region)
+        state = _detect_bar_state(shot)
+
+        if state is None:
+            elapsed = time.time() - control_start
+            return elapsed >= 2.0
+
+        in_zone = state["in_zone"]
+        if in_zone:
+            sustained_duration += 0.01
+        else:
+            sustained_duration = max(0.0, sustained_duration - 0.02)
+
+        if sustained_duration >= 5.0:
+            return True
+
+        _control_tick(state, params)
+        time.sleep(0.01)
+
+    return False
+
+
+@register("fishing_wait_bar")
+def fishing_wait_bar(ctx: BuiltinContext) -> str | None:
+    """步骤 L2: 等待钓鱼条出现。
+
+    Returns:
+        None — 成功检测到钓鱼条（继续执行后续步骤）
+        "break" — 超时未检测到（脚本错误, 退出脚本）
     """
-    params = ctx.params
-    timeout = params.get("timeout", 30.0)
-    tap_multiplier = params.get("tap_multiplier", 0.5)
-    deadzone = params.get("deadzone", 0.08)
-    bar_wait = params.get("bar_wait", 3.0)
+    timeout = ctx.params.get("timeout", 10.0)
 
     window = get_window(get_hwnd())
     region = _bar_region(window)
 
     with VisualLocator() as locator:
-        deadline = time.time() + bar_wait
-        bar_found = False
-        while time.time() < deadline:
-            shot = locator.capture_screen(region=region)
-            state = _detect_bar_state(shot)
-            if state is not None:
-                bar_found = True
-                break
-            time.sleep(0.1)
+        state = _wait_for_bar(locator, region, timeout)
+        if state is None:
+            logger.warning("未检测到钓鱼条 (L2超时)")
+            print("Script: 未检测到钓鱼条, 脚本出错")
+            return "break"
 
-        if not bar_found:
-            logger.info("未检测到钓鱼条，跳过溜鱼")
-            return
+        logger.info("检测到钓鱼条")
+        return None
 
-        logger.info("检测到钓鱼条，开始溜鱼")
-        deadline = time.time() + timeout
 
-        while time.time() < deadline:
-            shot = locator.capture_screen(region=region)
-            state = _detect_bar_state(shot)
+@register("fishing_control_bar")
+def fishing_control_bar(ctx: BuiltinContext) -> str | None:
+    """步骤 L3: 控制 A/D 溜鱼。
 
-            if state is None:
-                logger.info("钓鱼条消失，结束溜鱼")
-                return
+    Returns:
+        None — 钓鱼成功（继续执行后续步骤）
+        "retry" — 鱼溜走了（重试本次循环, 回到 L1 按F）
+        "break" — 超时/致命错误
+    """
+    timeout = ctx.params.get("timeout", 30.0)
+    tap_multiplier = ctx.params.get("tap_multiplier", 1.0)
+    deadzone = ctx.params.get("deadzone", 0.08)
 
-            _control_tick_discrete(state, {
-                "deadzone": deadzone,
-                "tap_multiplier": tap_multiplier,
-            })
-            time.sleep(0.01)
+    window = get_window(get_hwnd())
+    region = _bar_region(window)
 
-    logger.info("溜鱼结束")
+    with VisualLocator() as locator:
+        logger.info("开始溜鱼")
+        ok = _run_control_loop(locator, region, timeout, {
+            "deadzone": deadzone,
+            "tap_multiplier": tap_multiplier,
+        })
+
+        if ok:
+            logger.info("钓鱼成功")
+            return None
+
+        logger.info("鱼溜走了")
+        print("Script: 鱼溜走了, 重新本次循环")
+        return "retry"

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import time
 import tomllib
 from pathlib import Path
@@ -10,6 +11,8 @@ from typing import Any
 import pydirectinput as pdi
 
 from core.packages.constants import get_asset_path as gap
+
+logger = logging.getLogger(__name__)
 from core.packages.visual import click, wait_image_appear, wait_image_disappear, scroll
 from core.packages.window import activate_window, get_hwnd, get_window, wait_for_target_resolution
 from core.scripts._base import get_builtin, BuiltinContext
@@ -47,13 +50,15 @@ def run_toml_script(toml_path: str, times: int) -> None:
 
     _execute_steps(enter_steps, resolve, window_info)
 
-    for i in range(times):
+    i = 0
+    while i < times:
         print(f"Script: 正在执行脚本: {meta.get('name', 'Unknown')}, 第{i+1}次")
         result = _execute_steps(loop_steps, resolve, window_info)
         if result == "break":
             break
-        elif result == "continue":
+        elif result == "retry":
             continue
+        i += 1
 
     _execute_steps(exit_steps, resolve, window_info)
 
@@ -139,6 +144,22 @@ def _execute_steps(
                     print(msg)
                 return "break"
 
+        elif action == "break_if_not":
+            img = resolve(step["image"])
+            msg = step.get("message", "")
+            timeout = step.get("timeout", 10.0)
+            if (
+                wait_image_appear(
+                    img,
+                    timeout=timeout,
+                    confidence=step.get("confidence", 0.8),
+                )
+                is None
+            ):
+                if msg:
+                    print(msg)
+                return "break"
+
         elif action == "continue_if_not":
             img = resolve(step["image"])
             msg = step.get("message", "")
@@ -169,9 +190,14 @@ def _execute_steps(
         elif action == "wait_forever":
             img = resolve(step["image"])
             confidence = step.get("confidence", 0.8)
-            while (
-                wait_image_appear(img, timeout=0.1, confidence=confidence) is None
-            ):
+            timeout = step.get("timeout", 0.0)
+            deadline = time.time() + timeout if timeout > 0 else 0
+            while True:
+                if wait_image_appear(img, timeout=0.1, confidence=confidence) is not None:
+                    break
+                if deadline > 0 and time.time() >= deadline:
+                    logger.warning("等待模板超时(%ss): %s", timeout, img)
+                    return "break"
                 time.sleep(0.5)
 
         elif action == "call":
@@ -185,6 +211,8 @@ def _execute_steps(
                 params=step.get("params", {}),
                 window_info=window_info,
             )
-            func(ctx)
+            result = func(ctx)
+            if isinstance(result, str) and result in ("break", "continue", "retry"):
+                return result
 
     return None

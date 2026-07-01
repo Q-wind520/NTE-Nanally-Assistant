@@ -5,7 +5,7 @@ description = "全自动钓鱼"
 [setup]
 base_path = "./assets/DY/"
 
-# ===== 等待钓鱼点 =====
+# ===================== S1-S3: 进入钓鱼页 =====================
 
 [[enter]]
 type = "print"
@@ -14,30 +14,44 @@ text = "Script: 等待玩家站到钓鱼点"
 [[enter]]
 type = "wait_forever"
 image = "DiaoYu.png"
+timeout = 300.0
+
+[[enter]]
+type = "print"
+text = "Script: 识别到钓鱼点, 按F交互"
 
 [[enter]]
 type = "press"
 key = "f"
 
 [[enter]]
+type = "sleep"
+duration = 1.0
+
+[[enter]]
 type = "click"
 image = "start.png"
+timeout = 10.0
 
 [[enter]]
 type = "break_if"
 image = "lacking.png"
 timeout = 1.0
-message = "Script: 鱼饵已耗尽"
+message = "Script: 鱼饵未选择或已耗尽, 退出 -1"
 
 [[enter]]
 type = "sleep"
 duration = 2.0
 
-# ===== 循环体 =====
+[[enter]]
+type = "print"
+text = "Script: 已进入钓鱼页, 开始循环"
+
+# ===================== L1-L4: 循环钓鱼 =====================
 
 [[loop]]
-type = "sleep"
-duration = 1.0
+type = "print"
+text = "Script: L1 — 按F开始钓鱼"
 
 [[loop]]
 type = "press"
@@ -47,7 +61,11 @@ key = "f"
 type = "break_if"
 image = "lacking.png"
 timeout = 1.0
-message = "Script: 鱼饵已耗尽"
+message = "Script: 鱼饵耗尽, 退出 -1"
+
+[[loop]]
+type = "print"
+text = "Script: L2 — 等待咬钩"
 
 [[loop]]
 type = "wait"
@@ -56,13 +74,37 @@ timeout = 20.0
 confidence = 0.7
 
 [[loop]]
+type = "break_if_not"
+image = "upfish.png"
+timeout = 0.5
+confidence = 0.7
+message = "Script: 咬钩超时, 退出脚本"
+
+[[loop]]
+type = "print"
+text = "Script: 识别到上钩, 按F收杆"
+
+[[loop]]
 type = "press"
 key = "f"
 
 [[loop]]
 type = "call"
-name = "fishing_bar_control"
-timeout = 30.0
+name = "fishing_wait_bar"
+params = { timeout = 10.0 }
+
+[[loop]]
+type = "print"
+text = "Script: L3 — 控制A/D溜鱼"
+
+[[loop]]
+type = "call"
+name = "fishing_control_bar"
+params = { timeout = 30.0, tap_multiplier = 1.0 }
+
+[[loop]]
+type = "print"
+text = "Script: 等待结果界面"
 
 [[loop]]
 type = "wait"
@@ -71,6 +113,17 @@ timeout = 20.0
 confidence = 0.7
 
 [[loop]]
+type = "continue_if_not"
+image = "close.png"
+timeout = 0.5
+confidence = 0.7
+message = "Script: 钓鱼失败, 未识别到close.png"
+
+[[loop]]
+type = "print"
+text = "Script: L4 — 钓鱼成功, 关闭结果界面"
+
+[[loop]]
 type = "sleep"
 duration = 0.5
 
@@ -78,19 +131,32 @@ duration = 0.5
 type = "press"
 key = "esc"
 
-# ===== 退出 =====
-[[exit]]
+[[loop]]
 type = "sleep"
 duration = 0.5
 
+# ===================== 退出 =====================
+
+[[exit]]
+type = "print"
+text = "Script: 退出脚本, esc退出到开始页"
+
 [[exit]]
 type = "press"
 key = "esc"
 
 [[exit]]
 type = "sleep"
-duration = 1
+duration = 1.0
+
+[[exit]]
+type = "print"
+text = "Script: esc到钓鱼点"
 
 [[exit]]
 type = "press"
 key = "esc"
+
+[[exit]]
+type = "print"
+text = "Script: 退出脚本: 0"
