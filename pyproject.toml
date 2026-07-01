@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "NTE_Nanally_Assistant"
-version = "v1.0.0"
+version = "v1.0.1"
 authors = [
     { name="Q-wind520", email="mg_fire1030@163.com" },
 ]
